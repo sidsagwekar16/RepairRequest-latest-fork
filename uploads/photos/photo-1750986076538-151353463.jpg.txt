@@ -1,0 +1,8 @@
+Photo file missing for request #32
+Original filename: leak(1).jpg
+Upload time: Fri Jun 27 2025 01:01:16 GMT+0000 (Coordinated Universal Time)
+Size: 625 bytes
+MIME type: image/jpeg
+
+This is a placeholder. The original photo was uploaded but the file was not properly saved to disk.
+Contact system administrator to recover from backup if available.

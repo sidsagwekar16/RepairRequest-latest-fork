@@ -1,0 +1,8 @@
+Photo file missing for request #25
+Original filename: Screenshot 2025-06-24 145601.png
+Upload time: Tue Jun 24 2025 19:21:17 GMT+0000 (Coordinated Universal Time)
+Size: 40763 bytes
+MIME type: image/png
+
+This is a placeholder. The original photo was uploaded but the file was not properly saved to disk.
+Contact system administrator to recover from backup if available.

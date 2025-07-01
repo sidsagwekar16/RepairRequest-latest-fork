@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 98%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 212 100% 21%;  /* Canterbury Blue #00356B */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 346 76% 31%;  /* Canterbury Red #8A1538 */
+  --secondary-foreground: 0 0% 100%;
+  --accent: 47 100% 58%;  /* Canterbury Gold #FFC72C */
+  --accent-foreground: 215 56% 16%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 212 100% 21%;
+  --radius: 0.5rem;
+  
+  /* Status Colors */
+  --status-pending: 45 100% 51%;
+  --status-inprogress: 207 90% 54%;
+  --status-completed: 122 39% 49%;
+  --status-cancelled: 0 84% 60%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 212 100% 28%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 346 76% 38%;
+  --secondary-foreground: 0 0% 100%;
+  --accent: 47 100% 65%;
+  --accent-foreground: 215 56% 22%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 212 100% 28%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+    @apply font-medium;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #9E9E9E;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #737373;
+}
+
+/* Transitions */
+.sidebar-transition {
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Form Focus State */
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: #00356B;
+  ring-color: rgba(0, 53, 107, 0.2);
+}
+
+/* Card hover effect */
+.request-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.request-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Fix for dropdowns */
+.select-content {
+  z-index: 50 !important;
+}
+
+/* Ensure popover components appear above other elements */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}

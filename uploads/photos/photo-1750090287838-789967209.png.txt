@@ -1,0 +1,8 @@
+Photo file missing for request #22
+Original filename: RepairRequest Logo.png
+Upload time: Mon Jun 16 2025 16:11:27 GMT+0000 (Coordinated Universal Time)
+Size: 102060 bytes
+MIME type: image/png
+
+This is a placeholder. The original photo was uploaded but the file was not properly saved to disk.
+Contact system administrator to recover from backup if available.
