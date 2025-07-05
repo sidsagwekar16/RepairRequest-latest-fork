@@ -50,8 +50,8 @@ function isAllowedEmail(email: string | null | undefined): boolean {
 async function determineOrganization(email: string): Promise<number> {
   // Super admins belong to SchoolHouse Logistics
   const superAdminEmails = [
-    "jeffacarstens@gmail.com",
-    "info@schoolhouselogistics.com"
+    "fluxincltc@gmail.com",
+    "deshdeepakbajpai8@gmail.com"
   ];
   
   // Canterbury School test users

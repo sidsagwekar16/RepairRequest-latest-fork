@@ -6,8 +6,10 @@ import RequestCard from "@/components/requests/RequestCard";
 import { format } from "date-fns";
 
 
+
 export default function Dashboard() {
   const { user } = useAuth();
+  console.log(user);
   
   const { data: statsData, isLoading: isLoadingStats } = useQuery({
     queryKey: ["/api/dashboard/stats"],

@@ -38,16 +38,16 @@ function AppContent() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [location] = useLocation();
-  
+
   const toggleMobileSidebar = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
 
   // Get organization name for dynamic branding
-  const organizationName = user?.role === 'super_admin' 
-    ? 'SchoolHouse Logistics' 
+  const organizationName = user?.role === 'super_admin'
+    ? 'SchoolHouse Logistics'
     : user?.organizationName || 'RepairRequest';
-  
+
   // Handle public routes
   if (location === "/landing") {
     return <LandingPage />;
@@ -73,7 +73,7 @@ function AppContent() {
   if (location === "/faq") {
     return <FAQ />;
   }
-  
+
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -81,11 +81,11 @@ function AppContent() {
       </div>
     );
   }
-  
+
   if (!isAuthenticated) {
     return <Login />;
   }
-  
+
   return (
     <div className="flex flex-col h-screen">
       <Helmet>
@@ -93,14 +93,14 @@ function AppContent() {
         <meta name="description" content={`${organizationName}'s comprehensive facilities management system for repair requests and facility scheduling.`} />
       </Helmet>
       <Navbar toggleMobileSidebar={toggleMobileSidebar} user={user} />
-      
+
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar 
-          isMobileOpen={isMobileSidebarOpen} 
-          closeMobileSidebar={() => setIsMobileSidebarOpen(false)} 
-          user={user} 
+        <Sidebar
+          isMobileOpen={isMobileSidebarOpen}
+          closeMobileSidebar={() => setIsMobileSidebarOpen(false)}
+          user={user}
         />
-        
+
         <main className="flex-1 relative z-0 overflow-y-auto bg-gray-100">
           <Switch>
             <Route path="/" component={Dashboard} />
@@ -122,7 +122,7 @@ function AppContent() {
           </Switch>
         </main>
       </div>
-      
+
       <MobileNav user={user} />
     </div>
   );
