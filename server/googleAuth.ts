@@ -95,11 +95,20 @@ async function determineOrganization(email: string): Promise<number> {
 
 // Determine user role based on email address
 function determineUserRole(email: string): string {
+  console.log("=== DETERMINING USER ROLE ===");
+  console.log("Email received:", email);
+  console.log("Email lowercase:", email.toLowerCase());
+  
   // Super admin emails for multi-tenant management
   const superAdminEmails = [
+    "fluxincltc@gmail.com",
+    "deshdeepakbajpai8@gmail.com",
     "jeffacarstens@gmail.com",
     "info@schoolhouselogistics.com"
   ];
+  
+  console.log("Super admin emails:", superAdminEmails);
+  console.log("Is email in super admin list?", superAdminEmails.includes(email.toLowerCase()));
   
   // Canterbury School specific admins
   const canterburyAdminEmails = [
@@ -113,6 +122,9 @@ function determineUserRole(email: string): string {
   
   // Check for admin emails from environment variables or common patterns
   const adminEmails = process.env.ADMIN_EMAILS ? process.env.ADMIN_EMAILS.split(',') : [];
+  console.log("ADMIN_EMAILS from env:", process.env.ADMIN_EMAILS);
+  console.log("Parsed admin emails:", adminEmails);
+  console.log("Is email in admin list?", adminEmails.includes(email.toLowerCase()));
   
   // Common maintenance staff email prefixes
   const maintenanceStaffPrefixes = [
@@ -130,22 +142,29 @@ function determineUserRole(email: string): string {
   if (superAdminEmails.includes(email.toLowerCase())) {
     // Super administrators for multi-tenant management
     role = "super_admin";
+    console.log("✅ Assigned super_admin role");
   } else if (canterburyAdminEmails.includes(email.toLowerCase())) {
     // Canterbury School administrators
     role = "admin";
+    console.log("✅ Assigned admin role");
   } else if (canterburyUserEmails.includes(email.toLowerCase())) {
     // Canterbury School regular users
     role = "requester";
+    console.log("✅ Assigned requester role (Canterbury user)");
   } else if (adminEmails.includes(email.toLowerCase())) {
     // Explicitly defined administrators
     role = "admin";
+    console.log("✅ Assigned admin role (from ADMIN_EMAILS)");
   } else if (maintenanceStaffPrefixes.some(prefix => 
     email.toLowerCase().startsWith(prefix))) {
     // Maintenance staff based on email prefix
     role = "maintenance";
+    console.log("✅ Assigned maintenance role");
+  } else {
+    console.log("❌ No matching role found, using default: requester");
   }
   
-  console.log(`Assigned role ${role} to ${email}`);
+  console.log(`Final result: Assigned role ${role} to ${email}`);
   return role;
 }
 
