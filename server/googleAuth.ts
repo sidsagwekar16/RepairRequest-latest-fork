@@ -170,7 +170,16 @@ export async function setupAuth(app: Express) {
   } else {
     // Production fallback - check for production domain
     const prodDomain = process.env.PRODUCTION_DOMAIN || "repairrequest.org";
-    callbackURL = `https://${prodDomain}/api/auth/callback/google`;
+    
+    // Handle case where PRODUCTION_DOMAIN might already include protocol
+    let cleanDomain = prodDomain;
+    if (prodDomain.startsWith('https://')) {
+      cleanDomain = prodDomain.replace('https://', '');
+    } else if (prodDomain.startsWith('http://')) {
+      cleanDomain = prodDomain.replace('http://', '');
+    }
+    
+    callbackURL = `https://${cleanDomain}/api/auth/callback/google`;
   }
   
   console.log("Environment check:");
