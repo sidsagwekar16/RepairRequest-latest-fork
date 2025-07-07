@@ -66,7 +66,7 @@ export default function MyRequests() {
                       variant="default"
                       onClick={() => navigate("/new-facilities-request")}
                     >
-                      Create Facilities Request
+                      Create Labor Request
                     </Button>
                     <Button 
                       variant="outline"

@@ -30,7 +30,7 @@ export default function Sidebar({ isMobileOpen, closeMobileSidebar, user }: Side
     { href: "/reports", label: "Reports", icon: "assessment", access: "admin" },
 
     { href: "/assigned-requests", label: "Assigned to Me", icon: "engineering", access: "admin" },
-    { href: "/new-building-request", label: "New Building Request", icon: "home_repair_service", access: "admin" },
+    { href: "/new-building-request", label: "New Repair Request", icon: "home_repair_service", access: "admin" },
     { href: "/new-facilities-request", label: "New Labor Request", icon: "event_seat", access: "admin" },
   ] : user?.role === 'maintenance' ? [
     // Maintenance menu order
@@ -39,12 +39,12 @@ export default function Sidebar({ isMobileOpen, closeMobileSidebar, user }: Side
     { href: "/room-history", label: "Room History", icon: "history", access: "maintenance" },
 
     { href: "/manage-requests", label: "Manage Requests", icon: "manage_accounts", access: "maintenance" },
-    { href: "/new-building-request", label: "New Building Request", icon: "home_repair_service", access: "maintenance" },
+    { href: "/new-building-request", label: "New Repair Request", icon: "home_repair_service", access: "maintenance" },
     { href: "/new-facilities-request", label: "New Facilities Request", icon: "event_seat", access: "maintenance" },
   ] : [
     // Regular user menu
     { href: "/", label: "Dashboard", icon: "dashboard", access: "all" },
-    { href: "/new-building-request", label: "New Building Request", icon: "home_repair_service", access: "all" },
+    { href: "/new-building-request", label: "New Repair Request", icon: "home_repair_service", access: "all" },
     { href: "/new-facilities-request", label: "New Labor Request", icon: "event_seat", access: "all" },
     { href: "/my-requests", label: "My Requests", icon: "assignment", access: "all" },
     { href: "/room-history", label: "Room History", icon: "history", access: "all" },

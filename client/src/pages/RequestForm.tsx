@@ -81,6 +81,7 @@ export default function RequestForm() {
     }
   }
   
+  const today = new Date().toISOString().split('T')[0];
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -161,7 +162,7 @@ export default function RequestForm() {
                       <FormItem>
                         <FormLabel>Date of Event</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input type="date" min={today} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -293,7 +294,8 @@ export default function RequestForm() {
                       })()}
                     </div>
                   ) : (
-                    <p className="text-gray-500">Please select a facility to see available items</p>
+                    // <p className="text-gray-500">Please select a facility to see available items</p>
+                    ""
                   )}
                 
                 <div className="mt-6">
@@ -302,7 +304,7 @@ export default function RequestForm() {
                     name="otherNeeds"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Additional Notes or Special Requirements</FormLabel>
+                        {/* <FormLabel>Additional Notes or Special Requirements</FormLabel> */}
                         <FormControl>
                           <Textarea 
                             rows={4} 

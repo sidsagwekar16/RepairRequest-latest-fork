@@ -354,7 +354,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error stack:", error?.stack);
       console.error("Full error object:", error);
       res.status(500).json({ 
-        message: "Failed to create facilities request",
+        message: "Failed to create labor request",
         error: error?.message || "Unknown error"
       });
     }
