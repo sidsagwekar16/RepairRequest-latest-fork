@@ -6,8 +6,71 @@ import { Label } from "@/components/ui/label";
 import { MapPin, Mail, Phone, Clock } from "lucide-react";
 import { Link } from "wouter";
 import logoPath from "@assets/RepairRequest Logo Transparent_1750783382845.png";
+import React, { useState } from "react";
 
 export default function Contact() {
+  // Form state
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    organization: "",
+    inquiry: "",
+    message: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+  // Handle input changes
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+    const { id, value } = e.target;
+    setForm((prev) => ({ ...prev, [id]: value }));
+  }
+
+  // Handle form submit
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSuccess("");
+    setError("");
+    // Basic validation
+    if (!form.firstName || !form.lastName || !form.email || !form.organization || !form.message) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("https://repairrequest.onrender.com/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      console.log("Response: ", res)
+      if (res.ok) {
+        setSuccess("Your message has been sent! We'll get back to you soon.");
+        setForm({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          organization: "",
+          inquiry: "",
+          message: "",
+        });
+      } else {
+        const data = await res.json();
+        setError(data.error || "Something went wrong. Please try again later.");
+      }
+    } catch (err) {
+      console.log("Error message: ", err)
+      setError("Network error. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
@@ -143,34 +206,36 @@ export default function Contact() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form className="space-y-4">
+                  <form className="space-y-4" onSubmit={handleSubmit}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">First Name *</Label>
-                        <Input id="firstName" placeholder="John" required />
+                        <Input id="firstName" placeholder="John" required value={form.firstName} onChange={handleChange} />
                       </div>
                       <div>
                         <Label htmlFor="lastName">Last Name *</Label>
-                        <Input id="lastName" placeholder="Doe" required />
+                        <Input id="lastName" placeholder="Doe" required value={form.lastName} onChange={handleChange} />
                       </div>
                     </div>
                     <div>
                       <Label htmlFor="email">Email *</Label>
-                      <Input id="email" type="email" placeholder="john@example.com" required />
+                      <Input id="email" type="email" placeholder="john@example.com" required value={form.email} onChange={handleChange} />
                     </div>
                     <div>
                       <Label htmlFor="phone">Phone</Label>
-                      <Input id="phone" type="tel" placeholder="(555) 123-4567" />
+                      <Input id="phone" type="tel" placeholder="(555) 123-4567" value={form.phone} onChange={handleChange} />
                     </div>
                     <div>
                       <Label htmlFor="organization">Organization *</Label>
-                      <Input id="organization" placeholder="Your organization name" required />
+                      <Input id="organization" placeholder="Your organization name" required value={form.organization} onChange={handleChange} />
                     </div>
                     <div>
                       <Label htmlFor="inquiry">Inquiry Type</Label>
                       <select 
                         id="inquiry"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={form.inquiry}
+                        onChange={handleChange}
                       >
                         <option value="">Select an option</option>
                         <option value="sales">Sales Inquiry</option>
@@ -187,10 +252,14 @@ export default function Contact() {
                         placeholder="Please describe how we can help you..."
                         rows={5}
                         required
+                        value={form.message}
+                        onChange={handleChange}
                       />
                     </div>
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                      Send Message
+                    {error && <p className="text-red-600 text-sm text-center">{error}</p>}
+                    {success && <p className="text-green-600 text-sm text-center">{success}</p>}
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700" type="submit" disabled={loading}>
+                      {loading ? "Sending..." : "Send Message"}
                     </Button>
                     <p className="text-sm text-gray-500 text-center">
                       * Required fields

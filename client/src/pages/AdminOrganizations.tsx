@@ -27,7 +27,7 @@ export default function AdminOrganizations() {
   const { toast } = useToast();
 
   const { data: organizations, isLoading } = useQuery({
-    queryKey: ["/api/admin/organizations"],
+    queryKey: ["https://repairrequest.onrender.com/api/admin/organizations"],
   });
 
   const createOrgMutation = useMutation({
@@ -70,6 +70,31 @@ export default function AdminOrganizations() {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
       setSelectedOrg(null);
       toast({ title: "Organization updated successfully" });
+    },
+  });
+
+  const deleteOrgMutation = useMutation({
+    mutationFn: (id: number) => {
+      return fetch(`https://repairrequest.onrender.com/api/admin/organizations/${id}`, {
+        method: "DELETE",
+      }).then(async res => {
+        if (!res.ok) throw new Error("Failed to delete organization");
+        const text = await res.text();
+        return text ? JSON.parse(text) : {};
+        return res.json();
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["https://repairrequest.onrender.com/api/admin/organizations"] });
+      setSelectedOrg(null);
+      toast({ title: "Organization deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error deleting organization",
+        description: error.message,
+        variant: "destructive"
+      });
     },
   });
 
@@ -256,6 +281,14 @@ export default function AdminOrganizations() {
                 <div className="flex gap-2">
                   <Button type="submit" disabled={updateOrgMutation.isPending}>
                     {updateOrgMutation.isPending ? "Updating..." : "Update"}
+                  </Button>
+                  <Button
+                    type="button"
+                    disabled={deleteOrgMutation.isPending}
+                    className="bg-red-800 hover:bg-red-900 text-white"
+                    onClick={() => selectedOrg && deleteOrgMutation.mutate(selectedOrg.id)}
+                  >
+                    {deleteOrgMutation.isPending ? "Deleting..." : "Delete"}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => setSelectedOrg(null)}>
                     Cancel

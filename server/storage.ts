@@ -45,6 +45,7 @@ export interface IStorage {
   getOrganizationByDomain(domain: string): Promise<Organization | undefined>;
   updateOrganization(id: number, updates: Partial<InsertOrganization>): Promise<Organization>;
   getAllOrganizations(): Promise<any[]>;
+  deleteOrganization(id: number): Promise<void>;
   
   // Building operations
   createBuilding(buildingData: InsertBuilding): Promise<Building>;
@@ -148,6 +149,24 @@ export class DatabaseStorage implements IStorage {
     return org;
   }
 
+  async getAllOrganizations(): Promise<any[]> {
+    console.log("Storage: getAllOrganizations called");
+    try {
+      const orgList = await db
+        .select()
+        .from(organizations)
+        .orderBy(organizations.name);
+      return orgList;
+    } catch (error) {
+      console.error("Storage: Error in getAllOrganizations:", error);
+      throw error;
+    }
+  }
+
+  async deleteOrganization(id: number): Promise<void> {
+    await db.delete(organizations).where(eq(organizations.id, id));
+  }
+
   // Building operations
   async createBuilding(buildingData: InsertBuilding): Promise<Building> {
     const [building] = await db.insert(buildings).values(buildingData).returning();
@@ -155,7 +174,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBuildingsByOrganization(organizationId: number): Promise<Building[]> {
-    return await db.select().from(buildings).where(eq(buildings.organizationId, organizationId));
+    return db.select().from(buildings).where(eq(buildings.organizationId, organizationId));
   }
 
   async updateBuilding(id: number, updates: Partial<InsertBuilding>): Promise<Building> {
@@ -170,7 +189,7 @@ export class DatabaseStorage implements IStorage {
   async deleteBuilding(id: number): Promise<void> {
     await db.delete(buildings).where(eq(buildings.id, id));
   }
-
+  
   // Facility operations
   async createFacility(facilityData: InsertFacility): Promise<Facility> {
     const [facility] = await db.insert(facilities).values(facilityData).returning();
@@ -178,7 +197,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFacilitiesByOrganization(organizationId: number): Promise<Facility[]> {
-    return await db.select().from(facilities).where(eq(facilities.organizationId, organizationId));
+    return db.select().from(facilities).where(eq(facilities.organizationId, organizationId));
   }
 
   async updateFacility(id: number, updates: Partial<InsertFacility>): Promise<Facility> {
@@ -193,54 +212,7 @@ export class DatabaseStorage implements IStorage {
   async deleteFacility(id: number): Promise<void> {
     await db.delete(facilities).where(eq(facilities.id, id));
   }
-
-  async getAllOrganizations(): Promise<any[]> {
-    console.log("Storage: getAllOrganizations called");
-    try {
-      const orgList = await db
-        .select({
-          id: organizations.id,
-          name: organizations.name,
-          slug: organizations.slug,
-          domain: organizations.domain,
-          logoUrl: organizations.logoUrl,
-          settings: organizations.settings,
-          createdAt: organizations.createdAt,
-        })
-        .from(organizations)
-        .orderBy(organizations.createdAt);
-      
-      // Get user and building counts for each organization
-      const orgsWithCounts = await Promise.all(
-        orgList.map(async (org) => {
-          // Count users for this organization
-          const userCountResult = await db
-            .select({ count: count() })
-            .from(users)
-            .where(eq(users.organizationId, org.id));
-          
-          // Count buildings for this organization
-          const buildingCountResult = await db
-            .select({ count: count() })
-            .from(buildings)
-            .where(eq(buildings.organizationId, org.id));
-          
-          return {
-            ...org,
-            userCount: userCountResult[0]?.count || 0,
-            buildingCount: buildingCountResult[0]?.count || 0,
-          };
-        })
-      );
-      
-      console.log("Storage: Organizations with counts:", orgsWithCounts);
-      return orgsWithCounts;
-    } catch (error) {
-      console.error("Storage: Error in getAllOrganizations:", error);
-      throw error;
-    }
-  }
-
+  
   // User operations
   async getUser(id: string): Promise<User | undefined> {
     console.log("=== STORAGE getUser DEBUG ===");

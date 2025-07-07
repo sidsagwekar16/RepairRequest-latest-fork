@@ -46,7 +46,7 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").notNull().default("requester"), // requester, maintenance, admin
-  organizationId: integer("organization_id").references(() => organizations.id),
+  organizationId: integer("organization_id").references(() => organizations.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -54,7 +54,9 @@ export const users = pgTable("users", {
 // Buildings table for organization-specific building data
 export const buildings = pgTable("buildings", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull().references(() => organizations.id),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "cascade" }),
   name: varchar("name").notNull(),
   address: varchar("address"),
   description: text("description"),
@@ -67,7 +69,7 @@ export const buildings = pgTable("buildings", {
 // Facilities table for organization-specific facility data
 export const facilities = pgTable("facilities", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull().references(() => organizations.id),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
   name: varchar("name").notNull(),
   description: text("description"),
   category: varchar("category"),
@@ -81,7 +83,7 @@ export const facilities = pgTable("facilities", {
 // Maintenance requests table 
 export const requests = pgTable("requests", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull().references(() => organizations.id),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
   requestType: varchar("request_type").notNull().default("facilities"), // facilities or building
   facility: varchar("facility").notNull(),
   event: varchar("event").notNull(),
@@ -181,6 +183,19 @@ export const requestPhotos = pgTable("request_photos", {
   uploadedAt: timestamp("uploaded_at").defaultNow(),
 });
 
+// Contact messages table for storing contact form submissions
+export const contactMessages = pgTable("contact_messages", {
+  id: serial("id").primaryKey(),
+  firstName: varchar("first_name").notNull(),
+  lastName: varchar("last_name").notNull(),
+  email: varchar("email").notNull(),
+  phone: varchar("phone"),
+  organization: varchar("organization").notNull(),
+  inquiry: varchar("inquiry"),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 
 
 // Schemas for zod validation
@@ -235,6 +250,10 @@ export const insertRequestPhotoSchema = z.object({
   photoUrl: z.string().optional(),
 });
 
+export const insertContactMessageSchema = createInsertSchema(contactMessages).omit({
+  id: true,
+  createdAt: true,
+});
 
 
 // Add organization and building schema types
@@ -289,6 +308,9 @@ export type StatusUpdate = typeof statusUpdates.$inferSelect;
 
 export type InsertRequestPhoto = z.infer<typeof insertRequestPhotoSchema>;
 export type RequestPhoto = typeof requestPhotos.$inferSelect;
+
+export type InsertContactMessage = z.infer<typeof insertContactMessageSchema>;
+export type ContactMessage = typeof contactMessages.$inferSelect;
 
 
 

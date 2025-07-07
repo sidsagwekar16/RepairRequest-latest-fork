@@ -15,9 +15,10 @@ import {
   insertAssignmentSchema,
   insertStatusUpdateSchema,
   insertRequestPhotoSchema,
+  insertContactMessageSchema,
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { db } from "./db";
+import { db, contactMessages } from "./db";
 import { requests } from "@shared/schema";
 
 // Fix error with multer types
@@ -709,7 +710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         console.log(`Directory ready for upload`);
         cb(null, uploadDir);
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Directory creation failed:`, error);
         cb(error, uploadDir);
       }
@@ -794,7 +795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           uploadDir: uploadDir,
           cwd: process.cwd()
         });
-      } catch (error) {
+      } catch (error: any) {
         console.error("Test upload error:", error);
         res.status(500).json({ error: error.message });
       }
@@ -1581,7 +1582,7 @@ function isAllowedEmail(email: string): boolean {
       const organizations = await dbStorage.getAllOrganizations();
       console.log("Test route - organizations:", organizations);
       res.json(organizations);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Test route error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -1594,7 +1595,7 @@ function isAllowedEmail(email: string): boolean {
       const organizations = await dbStorage.getAllOrganizations();
       console.log("Temp route organizations:", organizations);
       res.json(organizations);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Temp route error:", error);
       res.status(500).json({ error: error.message });
     }
@@ -1614,7 +1615,7 @@ function isAllowedEmail(email: string): boolean {
       const organizations = await dbStorage.getAllOrganizations();
       console.log("Organizations retrieved successfully:", organizations);
       res.json(organizations);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching organizations:", error);
       res.status(500).json({ message: "Failed to fetch organizations", error: error.message });
     }
@@ -2388,6 +2389,33 @@ function isAllowedEmail(email: string): boolean {
     } catch (error) {
       console.error("Error deleting user:", error);
       res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // Contact form submission endpoint
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const parsed = insertContactMessageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: "Invalid input", details: parsed.error.errors });
+      }
+      console.log("[CONTACT] Validation passed:", parsed.data);
+      const [created] = await db.insert(contactMessages).values(parsed.data).returning();
+      res.status(201).json({ success: true, message: "Message received", data: created });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to submit message" });
+    }
+  });
+
+  // Delete organization (super admin only)
+  app.delete("/api/admin/organizations/:id", async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await dbStorage.deleteOrganization(id);
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error deleting organization:", error);
+      res.status(500).json({ error: "Failed to delete organization" });
     }
   });
 
