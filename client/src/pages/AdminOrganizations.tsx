@@ -26,13 +26,15 @@ export default function AdminOrganizations() {
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const { toast } = useToast();
 
+  const API_URL = import.meta.env.API_URL || "";
+
   const { data: organizations, isLoading } = useQuery({
-    queryKey: ["https://repairrequest.onrender.com/api/admin/organizations"],
+    queryKey: [`${API_URL}/api/admin/organizations`],
   });
 
   const createOrgMutation = useMutation({
     mutationFn: (orgData: any) => {
-      return fetch("/api/admin/organizations", {
+      return fetch(`${API_URL}/api/admin/organizations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orgData),
@@ -42,7 +44,7 @@ export default function AdminOrganizations() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      queryClient.invalidateQueries({ queryKey: [`${API_URL}/api/admin/organizations`] });
       setShowCreateForm(false);
       toast({ title: "Organization created successfully" });
     },
@@ -57,7 +59,7 @@ export default function AdminOrganizations() {
 
   const updateOrgMutation = useMutation({
     mutationFn: ({ id, ...data }: any) => {
-      return fetch(`/api/admin/organizations/${id}`, {
+      return fetch(`${API_URL}/api/admin/organizations/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -67,7 +69,7 @@ export default function AdminOrganizations() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      queryClient.invalidateQueries({ queryKey: [`${API_URL}/api/admin/organizations`] });
       setSelectedOrg(null);
       toast({ title: "Organization updated successfully" });
     },
@@ -75,7 +77,7 @@ export default function AdminOrganizations() {
 
   const deleteOrgMutation = useMutation({
     mutationFn: (id: number) => {
-      return fetch(`https://repairrequest.onrender.com/api/admin/organizations/${id}`, {
+      return fetch(`${API_URL}/api/admin/organizations/${id}`, {
         method: "DELETE",
       }).then(async res => {
         if (!res.ok) throw new Error("Failed to delete organization");
@@ -85,7 +87,7 @@ export default function AdminOrganizations() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["https://repairrequest.onrender.com/api/admin/organizations"] });
+      queryClient.invalidateQueries({ queryKey: [`${API_URL}/api/admin/organizations`] });
       setSelectedOrg(null);
       toast({ title: "Organization deleted successfully" });
     },
