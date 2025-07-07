@@ -33,6 +33,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import MobileNav from "@/components/layout/MobileNav";
 import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
+import ScrollToTop from "@/components/ScrollToTop";
 
 function AppContent() {
   const { user, isLoading, isAuthenticated } = useAuth();
@@ -44,9 +45,14 @@ function AppContent() {
   };
 
   // Get organization name for dynamic branding
-  const organizationName = user?.role === 'super_admin'
-    ? 'SchoolHouse Logistics'
-    : user?.organizationName || 'RepairRequest';
+  let organizationName = 'RepairRequest';
+  if (user && typeof user === 'object') {
+    if ('role' in user && user.role === 'super_admin') {
+      organizationName = 'SchoolHouse Logistics';
+    } else if ('organizationName' in user && typeof user.organizationName === 'string') {
+      organizationName = user.organizationName;
+    }
+  }
 
   // Handle public routes
   if (location === "/landing") {
@@ -133,6 +139,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
+        <ScrollToTop />
         <AppContent />
       </TooltipProvider>
     </QueryClientProvider>
