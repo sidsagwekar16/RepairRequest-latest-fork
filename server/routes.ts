@@ -1,12 +1,27 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage as dbStorage } from "./storage";
-import { setupAuth, isAuthenticated } from "./googleAuth";
+import { isAuthenticated } from "./subAuth.js";
 import { sendRequestNotificationEmails } from "./emailService";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import z from "zod"
+
+// Extend session interface to include user property
+declare module "express-session" {
+  interface SessionData {
+    user?: {
+      id: string;
+      email: string;
+      role: string;
+      firstName: string;
+      lastName: string;
+      organizationId?: number;
+    };
+  }
+}
 import { 
   insertRequestSchema, 
   insertRequestItemsSchema,
@@ -16,10 +31,12 @@ import {
   insertStatusUpdateSchema,
   insertRequestPhotoSchema,
   insertContactMessageSchema,
+  users,
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { db, contactMessages } from "./db";
 import { requests } from "@shared/schema";
+import bcrypt from "bcryptjs";
 
 // Fix error with multer types
 declare module "express-serve-static-core" {
@@ -33,147 +50,262 @@ declare module "express-serve-static-core" {
 
 // Authentication middleware using Google OAuth
 const authMiddleware = (req: any, res: any, next: any) => {
-  if (!req.isAuthenticated() || !req.user) {
+  if (!req.session || !req.session.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
+
+  // ✅ Set req.user from session
+  req.user = req.session.user;
   next();
 };
 
-export async function registerRoutes(app: Express): Promise<Server> {
-  // CRITICAL: Set up Google authentication FIRST with explicit route registration
-  try {
-    await setupAuth(app);
-    console.log("Google authentication successfully configured");
-  } catch (error) {
-    console.error("Failed to set up Google authentication:", error);
-  }
+// Type for authenticated user from session
+type AuthenticatedUser = {
+  id: string;
+  email: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+  organizationId?: number;
+};
 
-  // PRIORITY OAUTH ROUTES: Register before all other middleware
-  const passport = await import('passport');
-  
-  // OAuth callback handler that bypasses middleware conflicts
-  app.get("/api/auth/callback/google", async (req, res) => {
-    console.log("=== PRIORITY OAUTH CALLBACK HANDLER ===");
-    console.log("Query params:", req.query);
-    console.log("Session ID:", req.sessionID);
-    
+const bulkSchema = z.array(
+  z.object({
+    email: z.string().email(),
+    firstName: z.string().min(1),
+    lastName: z.string().min(1),
+    role: z.enum(["requester", "maintenance", "admin", "super_admin"]),
+    organizationId: z.number().nullable().optional(),
+  })
+);
+
+export async function registerRoutes(app: Express): Promise<Server> {
+
+  app.post("/api/admin/users/bulk", isAuthenticated, async (req: any, res) => {
     try {
-      // Check for OAuth errors from Google
-      if (req.query.error) {
-        console.error("Google OAuth error:", req.query.error);
-        return res.redirect("/?error=oauth_error");
+      console.log("=== BULK IMPORT SESSION DEBUG ===");
+      console.log("Session ID:", req.sessionID);
+      console.log("Session exists:", !!req.session);
+      console.log("Session user:", req.session?.user);
+      console.log("req.user:", req.user);
+      
+      // Extract user ID from session authentication
+      const currentUserId = req.user?.id || req.user?.claims?.sub;
+      console.log("Current user ID from session:", currentUserId);
+      console.log("Full user object:", req.user);
+      
+      if (!currentUserId) {
+        return res.status(401).json({ message: "User ID not found in session" });
       }
       
-      // Check for authorization code
-      if (!req.query.code) {
-        console.error("No authorization code received");
-        return res.redirect("/?error=no_code");
+      const currentUser = await dbStorage.getUser(currentUserId);
+      console.log("Current user from database:", currentUser);
+      
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found in database" });
       }
       
-      console.log("Processing OAuth callback with code:", (req.query.code as string).substring(0, 10) + "...");
+      if (currentUser.role !== "super_admin") {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+  
+      console.log("=== BULK IMPORT DEBUG ===");
+      console.log("Request body:", req.body);
+      console.log("Users array:", req.body.users);
+      console.log("Users array type:", typeof req.body.users);
+      console.log("Users array length:", req.body.users?.length);
       
-      // Exchange authorization code for access token
-      const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          code: req.query.code as string,
-          client_id: process.env.GOOGLE_CLIENT_ID!,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-          redirect_uri: `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback/google`,
-          grant_type: 'authorization_code',
-        }),
-      });
-      
-      const tokenData = await tokenResponse.json();
-      console.log("Token exchange result:", tokenData.access_token ? "SUCCESS" : "FAILED");
-      
-      if (!tokenData.access_token) {
-        console.error("Failed to get access token:", tokenData);
-        return res.redirect("/?error=token_failed");
+      if (!req.body.users) {
+        console.error("No users array in request body");
+        return res.status(400).json({ message: "No users array provided" });
       }
       
-      // Get user profile from Google
-      const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: {
-          'Authorization': `Bearer ${tokenData.access_token}`,
-        },
-      });
-      
-      const profile = await profileResponse.json();
-      console.log("User profile received:", { id: profile.id, email: profile.email, name: profile.name });
-      
-      if (!profile.email) {
-        console.error("No email in profile");
-        return res.redirect("/?error=no_email");
+      const result = bulkSchema.safeParse(req.body.users);
+      console.log("Validation result:", result);
+      if (!result.success) {
+        console.error("Bulk import validation failed:", result.error.flatten().fieldErrors);
+        return res.status(400).json({ message: result.error.flatten().fieldErrors });
       }
-      
-      // Check if user is allowed
-      const allowedEmails = ['jeffemail111@gmail.com', 'admin@example.com', 'maintenance@example.com'];
-      if (!allowedEmails.includes(profile.email)) {
-        console.log("Email not in allowed list:", profile.email);
-        return res.redirect("/?error=not_authorized");
-      }
-      
-      // Find or create user
-      let user = await dbStorage.getUserByEmail(profile.email);
-      if (!user) {
-        // Create new user
-        const userData = {
-          id: profile.id,
-          email: profile.email,
-          name: profile.name,
-          role: profile.email === 'jeffemail111@gmail.com' ? 'admin' : 'requester',
-          organizationId: 1, // Default organization
-        };
-        user = await dbStorage.upsertUser(userData);
-        console.log("Created new user:", user);
-      } else {
-        console.log("Found existing user:", user);
-      }
-      
-      // Log in the user
-      req.logIn(user, (err) => {
-        if (err) {
-          console.error("Login failed:", err);
-          return res.redirect("/?error=login_failed");
+  
+      let created = 0;
+      let failed = 0;
+  
+      for (const u of result.data) {
+        try {
+          // skip duplicates
+          if (await dbStorage.getUserByEmail(u.email)) {
+            failed++;
+            continue;
+          }
+          // Generate a random password for the user
+          const tempPassword = crypto.randomBytes(8).toString('hex');
+          const hashedPassword = await bcrypt.hash(tempPassword, 10);
+          
+          await dbStorage.upsertUser({
+            id: crypto.randomUUID(),
+            email: u.email,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            password: hashedPassword,
+            role: u.role,
+            organizationId: u.role === "super_admin" ? null : u.organizationId ?? null,
+            profileImageUrl: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          
+          console.log(`Created user ${u.email} with temporary password: ${tempPassword}`);
+          created++;
+        } catch (e) {
+          console.error("Failed row:", u, e);
+          failed++;
         }
-        
-        console.log("User successfully logged in:", user.email);
-        console.log("Session after login:", req.sessionID);
-        
-        // Redirect to dashboard
-        return res.redirect("/dashboard");
+      }
+      res.json({ 
+        created, 
+        failed,
+        message: `Successfully imported ${created} users. ${failed} users were skipped (likely duplicates). Temporary passwords have been generated for new users.`
       });
-      
-    } catch (error) {
-      console.error("OAuth callback error:", error);
-      return res.redirect("/?error=callback_failed");
+    } catch (e: any) {
+      console.error("Bulk import error:", e);
+      console.error("Error stack:", e.stack);
+      res.status(500).json({ message: "Bulk import failed", error: e.message });
     }
   });
+  // CRITICAL: Set up Google authentication FIRST with explicit route registration
+  // try {
+  //   await setupAuth(app);
+  //   console.log("Google authentication successfully configured");
+  // } catch (error) {
+  //   console.error("Failed to set up Google authentication:", error);
+  // }
+
+  // PRIORITY OAUTH ROUTES: Register before all other middleware
+  const passport = await import('passport')
+  
+  // OAuth callback handler that bypasses middleware conflicts
+  // app.get("/api/auth/callback/google", async (req, res) => {
+  //   console.log("=== PRIORITY OAUTH CALLBACK HANDLER ===");
+  //   console.log("Query params:", req.query);
+  //   console.log("Session ID:", req.sessionID);
+    
+  //   try {
+  //     // Check for OAuth errors from Google
+  //     if (req.query.error) {
+  //       console.error("Google OAuth error:", req.query.error);
+  //       return res.redirect("/?error=oauth_error");
+  //     }
+      
+  //     // Check for authorization code
+  //     if (!req.query.code) {
+  //       console.error("No authorization code received");
+  //       return res.redirect("/?error=no_code");
+  //     }
+      
+  //     console.log("Processing OAuth callback with code:", (req.query.code as string).substring(0, 10) + "...");
+      
+  //     // Exchange authorization code for access token
+  //     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/x-www-form-urlencoded',
+  //       },
+  //       body: new URLSearchParams({
+  //         code: req.query.code as string,
+  //         client_id: process.env.GOOGLE_CLIENT_ID!,
+  //         client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+  //         redirect_uri: `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback/google`,
+  //         grant_type: 'authorization_code',
+  //       }),
+  //     });
+      
+  //     const tokenData = await tokenResponse.json();
+  //     console.log("Token exchange result:", tokenData.access_token ? "SUCCESS" : "FAILED");
+      
+  //     if (!tokenData.access_token) {
+  //       console.error("Failed to get access token:", tokenData);
+  //       return res.redirect("/?error=token_failed");
+  //     }
+      
+  //     // Get user profile from Google
+  //     const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+  //       headers: {
+  //         'Authorization': `Bearer ${tokenData.access_token}`,
+  //       },
+  //     });
+      
+  //     const profile = await profileResponse.json();
+  //     console.log("User profile received:", { id: profile.id, email: profile.email, name: profile.name });
+      
+  //     if (!profile.email) {
+  //       console.error("No email in profile");
+  //       return res.redirect("/?error=no_email");
+  //     }
+      
+  //     // Check if user is allowed
+  //     const allowedEmails = ['jeffemail111@gmail.com', 'admin@example.com', 'maintenance@example.com'];
+  //     if (!allowedEmails.includes(profile.email)) {
+  //       console.log("Email not in allowed list:", profile.email);
+  //       return res.redirect("/?error=not_authorized");
+  //     }
+      
+  //     // Find or create user
+  //     let user = await dbStorage.getUserByEmail(profile.email);
+  //     if (!user) {
+  //       // Create new user
+  //       const userData = {
+  //         id: profile.id,
+  //         email: profile.email,
+  //         name: profile.name,
+  //         role: profile.email === 'jeffemail111@gmail.com' ? 'admin' : 'requester',
+  //         organizationId: 1, // Default organization
+  //       };
+  //       user = await dbStorage.upsertUser(userData);
+  //       console.log("Created new user:", user);
+  //     } else {
+  //       console.log("Found existing user:", user);
+  //     }
+      
+  //     // Log in the user
+  //     req.logIn(user, (err) => {
+  //       if (err) {
+  //         console.error("Login failed:", err);
+  //         return res.redirect("/?error=login_failed");
+  //       }
+        
+  //       console.log("User successfully logged in:", user.email);
+  //       console.log("Session after login:", req.sessionID);
+        
+  //       // Redirect to dashboard
+  //       return res.redirect("/dashboard");
+  //     });
+      
+  //   } catch (error) {
+  //     console.error("OAuth callback error:", error);
+  //     return res.redirect("/?error=callback_failed");
+  //   }
+  // });
   
   // Login route with priority registration
-  app.get("/api/login", (req, res) => {
-    console.log("=== PRIORITY LOGIN HANDLER ===");
-    console.log("Redirecting to Google OAuth");
+  // app.get("/api/login", (req, res) => {
+  //   console.log("=== PRIORITY LOGIN HANDLER ===");
+  //   console.log("Redirecting to Google OAuth");
     
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback/google`;
-    const scope = "profile email";
-    const state = req.sessionID;
+  //   const clientId = process.env.GOOGLE_CLIENT_ID;
+  //   const redirectUri = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback/google`;
+  //   const scope = "profile email";
+  //   const state = req.sessionID;
     
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `response_type=code&` +
-      `client_id=${clientId}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `scope=${encodeURIComponent(scope)}&` +
-      `state=${state}`;
+  //   const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+  //     `response_type=code&` +
+  //     `client_id=${clientId}&` +
+  //     `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+  //     `scope=${encodeURIComponent(scope)}&` +
+  //     `state=${state}`;
     
-    console.log("Google OAuth URL:", googleAuthUrl.substring(0, 100) + "...");
-    res.redirect(googleAuthUrl);
-  });
+  //   console.log("Google OAuth URL:", googleAuthUrl.substring(0, 100) + "...");
+  //   res.redirect(googleAuthUrl);
+  // });
 
   // PRIORITY ROUTES: Register before Vite middleware to avoid conflicts
   
@@ -221,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      const user = req.user;
+      const user = req.user as AuthenticatedUser;
       const userId = user?.id;
       
       console.log("User authenticated:", { 
@@ -373,7 +505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      const user = req.user;
+      const user = req.user as AuthenticatedUser;
       const userId = user?.id;
       
       console.log("User authenticated:", { 
@@ -819,33 +951,17 @@ function isAllowedEmail(email: string): boolean {
   // Auth routes
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      console.log("Auth check - isAuthenticated:", req.isAuthenticated());
-      console.log("Auth check - user:", req.user);
-      console.log("Auth check - session:", req.session);
-      console.log("Auth check - sessionID:", req.sessionID);
+      console.log("=== /api/auth/user endpoint ===");
+      console.log("Session ID:", req.sessionID);
+      console.log("Session exists:", !!req.session);
+      console.log("Session user:", req.session?.user);
       
-      if (!req.isAuthenticated() || !req.user) {
+      if (!req.session.user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
       
-      // Get user with organization name
-      const user = req.user;
-      let userWithOrg = { ...user };
-      
-      // Fetch organization name if user has organizationId
-      if (user.organizationId) {
-        try {
-          const organization = await dbStorage.getOrganization(user.organizationId);
-          if (organization) {
-            userWithOrg.organizationName = organization.name;
-          }
-        } catch (orgError) {
-          console.log("Could not fetch organization name:", orgError);
-          // Continue without organization name rather than failing
-        }
-      }
-      
-      return res.json(userWithOrg);
+      const user = req.session.user;
+      return res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -856,7 +972,7 @@ function isAllowedEmail(email: string): boolean {
 
   // Helper function to get user info from Google auth
   const getUserInfo = async (req: any) => {
-    if (!req.isAuthenticated() || !req.user) {
+    if (!req.session.user || !req.user) {
       return { userId: undefined, user: undefined };
     }
     
@@ -866,7 +982,7 @@ function isAllowedEmail(email: string): boolean {
   // Custom middleware for authentication
   const checkAuth = (req: any, res: any, next: any) => {
     // Check if user is authenticated
-    if (req.isAuthenticated() && req.user) {
+    if (req.session.user && req.user) {
       return next();
     }
     
@@ -2137,10 +2253,6 @@ function isAllowedEmail(email: string): boolean {
     }
   });
 
-
-
-
-
   // Admin Organization Management endpoints
   app.get("/api/admin/organizations", authMiddleware, async (req, res) => {
     try {
@@ -2419,6 +2531,114 @@ function isAllowedEmail(email: string): boolean {
     }
   });
 
+  // === Neon DB Email/Password Signup ===
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
+      if (!email || !password || !firstName || !lastName) {
+        console.warn("⚠️ Missing fields:", req.body);
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+  
+      // Check if user exists
+      const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
+      if (existing) {
+        console.log("❌ User already exists:", email);
+        return res.status(409).json({ message: "User with this email already exists" });
+      }
+  
+      // Hash password
+      const hashed = await bcrypt.hash(password, 10);
+  
+      // Create user
+      const id = crypto.randomUUID();
+      const now = new Date();
+      const [user] = await db.insert(users).values({
+        id,
+        email,
+        firstName,
+        lastName,
+        password: hashed,
+        role: "requester",
+        createdAt: now,
+        updatedAt: now,
+      }).returning();
+  
+      console.log("✅ User created:", user);
+  
+      return res.status(201).json({
+        message: "Signup successful",
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+        },
+      });
+    } catch (err: any) {
+      console.error("🔥 Signup error:", err);
+      return res.status(500).json({
+        message: "Signup failed",
+        error: err.message,
+      });
+    }
+  });
+  
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      let { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Missing email or password" });
+      }
+      email = email.trim().toLowerCase();
+      password = password.trim();
+
+      // Find user by email
+      const user = await db.query.users.findFirst({ where: eq(users.email, email) });
+      if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Compare password
+      if (!user.password) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Set session for user (no Google Auth/passport)
+      req.session.user = {
+        id: user.id,
+        email: user.email || '',
+        role: user.role,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+      };
+
+      return res.status(200).json({
+        message: "Login successful",
+        user: req.session.user,
+      });
+    } catch (err: any) {
+      console.error("🔥 Login error:", err);
+      return res.status(500).json({
+        message: "Login failed",
+        error: err.message,
+      });
+    }
+  });
+
+  
+  
+  app.get('/api/logout', (req, res) => {
+    req.session.destroy(() => {
+      res.clearCookie('connect.sid'); // This removes the session cookie from browser
+      res.json({ message: "Logged out" });
+    });
+  });
+  
   const httpServer = createServer(app);
   return httpServer;
 }

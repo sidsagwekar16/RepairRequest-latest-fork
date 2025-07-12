@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import BulkUserImportModal from "@/components/admin/BulkUserImportModal";
 
 const createUserSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -23,7 +24,6 @@ const createUserSchema = z.object({
   role: z.enum(['requester', 'maintenance', 'admin', 'super_admin']),
   organizationId: z.number().optional(),
 }).refine((data) => {
-  // Organization is required for non-super admin users
   if (data.role !== 'super_admin' && !data.organizationId) {
     return false;
   }
@@ -238,6 +238,7 @@ export default function AdminUsers() {
               <Users className="h-5 w-5 text-gray-500" />
               <span className="text-sm text-gray-600">{filteredUsers.length} users</span>
             </div>
+            <BulkUserImportModal />
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button>

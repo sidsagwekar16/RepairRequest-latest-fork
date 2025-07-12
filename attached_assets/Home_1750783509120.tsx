@@ -19,7 +19,7 @@ export default function Home() {
                 <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
               </div>
             </div>
-            <Link href="/portal">
+            <Link href="/login">
               <Button variant="outline">
                 Login to Portal
               </Button>

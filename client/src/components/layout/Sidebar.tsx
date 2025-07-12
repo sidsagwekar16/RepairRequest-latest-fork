@@ -1,6 +1,7 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/UserAvatar";
+import { queryClient } from "@/lib/queryClient";
 
 interface SidebarProps {
   isMobileOpen: boolean;
@@ -8,15 +9,21 @@ interface SidebarProps {
   user: any;
 }
 
+declare global {
+  interface Window {
+    queryClient: any;
+  }
+}
+
 export default function Sidebar({ isMobileOpen, closeMobileSidebar, user }: SidebarProps) {
-  const [location] = useLocation();
+  const location = useLocation();
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'super_admin';
   const isMaintenance = user?.role === 'maintenance' || user?.role === 'admin';
 
   const navItems = isSuperAdmin ? [
     // Super Admin menu order
-    { href: "/", label: "Dashboard", icon: "dashboard", access: "super_admin" },
+    { href: "/dashboard", label: "Dashboard", icon: "dashboard", access: "super_admin" },
     { href: "/admin/organizations", label: "Manage Organizations", icon: "business", access: "super_admin" },
     { href: "/admin/buildings-facilities", label: "Buildings & Facilities", icon: "domain", access: "super_admin" },
     { href: "/admin/users", label: "User Management", icon: "group", access: "super_admin" },
@@ -24,17 +31,17 @@ export default function Sidebar({ isMobileOpen, closeMobileSidebar, user }: Side
     { href: "/reports", label: "Reports", icon: "assessment", access: "super_admin" },
   ] : isAdmin ? [
     // Admin menu order
-    { href: "/", label: "Dashboard", icon: "dashboard", access: "admin" },
+    { href: "/dashboard", label: "Dashboard", icon: "dashboard", access: "admin" },
+    // { href: "/admin/users", label: "User Management", icon: "group", access: "admin" },
     { href: "/manage-requests", label: "Manage Requests", icon: "manage_accounts", access: "admin" },
     { href: "/room-history", label: "Room History", icon: "history", access: "admin" },
     { href: "/reports", label: "Reports", icon: "assessment", access: "admin" },
-
     { href: "/assigned-requests", label: "Assigned to Me", icon: "engineering", access: "admin" },
     { href: "/new-building-request", label: "New Repair Request", icon: "home_repair_service", access: "admin" },
     { href: "/new-facilities-request", label: "New Labor Request", icon: "event_seat", access: "admin" },
   ] : user?.role === 'maintenance' ? [
     // Maintenance menu order
-    { href: "/", label: "Dashboard", icon: "dashboard", access: "maintenance" },
+    { href: "/dashboard", label: "Dashboard", icon: "dashboard", access: "maintenance" },
     { href: "/assigned-requests", label: "Assigned to Me", icon: "engineering", access: "maintenance" },
     { href: "/room-history", label: "Room History", icon: "history", access: "maintenance" },
 
@@ -43,7 +50,7 @@ export default function Sidebar({ isMobileOpen, closeMobileSidebar, user }: Side
     { href: "/new-facilities-request", label: "New Facilities Request", icon: "event_seat", access: "maintenance" },
   ] : [
     // Regular user menu
-    { href: "/", label: "Dashboard", icon: "dashboard", access: "all" },
+    { href: "/dashboard", label: "Dashboard", icon: "dashboard", access: "all" },
     { href: "/new-building-request", label: "New Repair Request", icon: "home_repair_service", access: "all" },
     { href: "/new-facilities-request", label: "New Labor Request", icon: "event_seat", access: "all" },
     { href: "/my-requests", label: "My Requests", icon: "assignment", access: "all" },
@@ -80,10 +87,10 @@ export default function Sidebar({ isMobileOpen, closeMobileSidebar, user }: Side
                 (item.access === "admin" && isAdmin) ||
                 (item.access === "super_admin" && isSuperAdmin)
               ) {
-                const isActive = location === item.href;
+                const isActive = location.pathname === item.href;
                 
                 return (
-                  <Link href={item.href} key={item.href}>
+                  <Link to={item.href} key={item.href}>
                     <div
                       className={cn(
                         isActive
@@ -117,14 +124,15 @@ export default function Sidebar({ isMobileOpen, closeMobileSidebar, user }: Side
         <div className="border-t border-gray-200 p-4">
           <div 
             className="flex items-center text-gray-600 hover:text-primary cursor-pointer select-none"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.preventDefault();
               if (isMobileOpen) {
                 closeMobileSidebar();
               }
-              setTimeout(() => {
-                window.location.href = "/api/logout";
-              }, 100);
+              await fetch("http://localhost:5000/api/logout", { credentials: "include" });
+              // Clear React Query cache
+              queryClient.clear();
+              window.location.href = "/landing";
             }}
             onTouchStart={(e) => {
               e.currentTarget.style.backgroundColor = '#f3f4f6';

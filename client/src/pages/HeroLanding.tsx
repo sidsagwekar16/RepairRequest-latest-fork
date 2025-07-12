@@ -19,7 +19,7 @@ export default function HeroLanding() {
                 <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
               </div>
             </div>
-            <Link href="/">
+            <Link href="/login">
               <Button variant="outline">
                 Login to Portal
               </Button>

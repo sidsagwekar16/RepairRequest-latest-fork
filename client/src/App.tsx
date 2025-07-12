@@ -1,4 +1,3 @@
-import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,13 +13,10 @@ import AssignedRequests from "@/pages/AssignedRequests";
 import ManageRequests from "@/pages/ManageRequests";
 import Reports from "@/pages/Reports";
 import RoomHistory from "@/pages/RoomHistory";
-
 import AdminOrganizations from "@/pages/AdminOrganizations";
 import AdminBuildingsFacilities from "@/pages/AdminBuildingsFacilities";
 import AdminUsers from "@/pages/AdminUsers";
 import LandingPage from "@/pages/LandingPage";
-import HeroLanding from "@/pages/HeroLanding";
-import Login from "@/pages/Login";
 import Pricing from "@/pages/Pricing";
 import Support from "@/pages/Support";
 import About from "@/pages/About";
@@ -31,18 +27,46 @@ import FAQ from "@/pages/FAQ";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileNav from "@/components/layout/MobileNav";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import ScrollToTop from "@/components/ScrollToTop";
+import SignupPage from "./pages/SignupPage";
+import LoginPage from "./pages/LoginPage";
+import { BrowserRouter, Route, Routes, useParams } from "react-router-dom";
 
-function AppContent() {
-  const { user, isLoading, isAuthenticated } = useAuth();
+function RequestDetailWrapper() {
+  const { id } = useParams();
+  return <RequestDetail id={id!} />;
+}
+
+function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [location] = useLocation();
 
   const toggleMobileSidebar = () => {
     setIsMobileSidebarOpen(!isMobileSidebarOpen);
   };
+
+  return (
+    <div className="flex flex-col h-screen">
+      <Navbar toggleMobileSidebar={toggleMobileSidebar} user={user} />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar
+          isMobileOpen={isMobileSidebarOpen}
+          closeMobileSidebar={() => setIsMobileSidebarOpen(false)}
+          user={user}
+        />
+        <main className="flex-1 relative z-0 overflow-y-auto bg-gray-100">
+          {children}
+        </main>
+      </div>
+      <MobileNav user={user} />
+    </div>
+  );
+}
+
+function AppContent() {
+  const { user, isLoading, isAuthenticated } = useAuth();
 
   // Get organization name for dynamic branding
   let organizationName = 'RepairRequest';
@@ -54,32 +78,6 @@ function AppContent() {
     }
   }
 
-  // Handle public routes
-  if (location === "/landing") {
-    return <LandingPage />;
-  }
-  if (location === "/pricing") {
-    return <Pricing />;
-  }
-  if (location === "/support") {
-    return <Support />;
-  }
-  if (location === "/about") {
-    return <About />;
-  }
-  if (location === "/contact") {
-    return <Contact />;
-  }
-  if (location === "/privacy") {
-    return <Privacy />;
-  }
-  if (location === "/terms") {
-    return <Terms />;
-  }
-  if (location === "/faq") {
-    return <FAQ />;
-  }
-
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -88,60 +86,121 @@ function AppContent() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
   return (
-    <div className="flex flex-col h-screen">
+    <>
       <Helmet>
         <title>{organizationName} - Facilities Management System</title>
         <meta name="description" content={`${organizationName}'s comprehensive facilities management system for repair requests and facility scheduling.`} />
       </Helmet>
-      <Navbar toggleMobileSidebar={toggleMobileSidebar} user={user} />
+      
+      <Routes>
+        {/* Public routes */}
+        <Route path="/landing" element={<LandingPage />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
 
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          isMobileOpen={isMobileSidebarOpen}
-          closeMobileSidebar={() => setIsMobileSidebarOpen(false)}
-          user={user}
-        />
-
-        <main className="flex-1 relative z-0 overflow-y-auto bg-gray-100">
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/new-facilities-request" component={RequestForm} />
-            <Route path="/new-building-request" component={BuildingRequestForm} />
-            <Route path="/requests/:id">
-              {params => <RequestDetail id={params.id} />}
-            </Route>
-            <Route path="/my-requests" component={MyRequests} />
-            <Route path="/assigned-requests" component={AssignedRequests} />
-            <Route path="/manage-requests" component={ManageRequests} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/room-history" component={RoomHistory} />
-
-            <Route path="/admin/organizations" component={AdminOrganizations} />
-            <Route path="/admin/buildings-facilities" component={AdminBuildingsFacilities} />
-            <Route path="/admin/users" component={AdminUsers} />
-            <Route component={NotFound} />
-          </Switch>
-        </main>
-      </div>
-
-      <MobileNav user={user} />
-    </div>
+        {/* Protected routes */}
+        {isAuthenticated ? (
+          <>
+            <Route path="/dashboard" element={
+              <ProtectedLayout>
+                <Dashboard />
+              </ProtectedLayout>
+            } />
+            <Route path="/new-facilities-request" element={
+              <ProtectedLayout>
+                <RequestForm />
+              </ProtectedLayout>
+            } />
+            <Route path="/new-building-request" element={
+              <ProtectedLayout>
+                <BuildingRequestForm />
+              </ProtectedLayout>
+            } />
+            <Route path="/requests/:id" element={
+              <ProtectedLayout>
+                <RequestDetailWrapper />
+              </ProtectedLayout>
+            } />
+            <Route path="/my-requests" element={
+              <ProtectedLayout>
+                <MyRequests />
+              </ProtectedLayout>
+            } />
+            <Route path="/assigned-requests" element={
+              <ProtectedLayout>
+                <AssignedRequests />
+              </ProtectedLayout>
+            } />
+            <Route path="/manage-requests" element={
+              <ProtectedLayout>
+                <ManageRequests />
+              </ProtectedLayout>
+            } />
+            <Route path="/reports" element={
+              <ProtectedLayout>
+                <Reports />
+              </ProtectedLayout>
+            } />
+            <Route path="/room-history" element={
+              <ProtectedLayout>
+                <RoomHistory />
+              </ProtectedLayout>
+            } />
+            <Route path="/admin/organizations" element={
+              <ProtectedLayout>
+                <AdminOrganizations />
+              </ProtectedLayout>
+            } />
+            <Route path="/admin/buildings-facilities" element={
+              <ProtectedLayout>
+                <AdminBuildingsFacilities />
+              </ProtectedLayout>
+            } />
+            <Route path="/admin/users" element={
+              <ProtectedLayout>
+                <AdminUsers />
+              </ProtectedLayout>
+            } />
+            <Route path="/" element={
+              <ProtectedLayout>
+                <Dashboard />
+              </ProtectedLayout>
+            } />
+            <Route path="*" element={
+              <ProtectedLayout>
+                <NotFound />
+              </ProtectedLayout>
+            } />
+          </>
+        ) : (
+          <>
+            <Route path="/landing" element={<LandingPage />} />
+            <Route path="*" element={<LandingPage />} />
+          </>
+        )}
+      </Routes>
+    </>
   );
 }
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <ScrollToTop />
-        <AppContent />
-      </TooltipProvider>
+      <BrowserRouter>
+        <TooltipProvider>
+          <Toaster />
+          <ScrollToTop />
+          <AppContent />
+        </TooltipProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }

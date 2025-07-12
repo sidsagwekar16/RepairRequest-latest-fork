@@ -3,14 +3,55 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from "path";
+import session from "express-session";
+import pgSimple from "connect-pg-simple";
+import { db } from "./db.js";
+// import adminUsersRouter from "./routes/adminUsers";
 
 const app = express();
+app.use(express.json({ limit: "5mb" }));
+// app.use(adminUsersRouter);
 
 // Serve attached assets directory as static files FIRST
 app.use('/attached_assets', express.static(path.resolve(process.cwd(), 'attached_assets')));
 
 // Serve uploads directory for photo attachments
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+
+// Configure PostgreSQL session store
+const PostgresStore = pgSimple(session);
+
+// Create sessions table if it doesn't exist
+const createSessionsTable = async () => {
+  try {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        sid VARCHAR PRIMARY KEY NOT NULL,
+        sess JSONB NOT NULL,
+        expire TIMESTAMP NOT NULL
+      )
+    `);
+    console.log("✅ Sessions table ready");
+  } catch (error) {
+    console.error("❌ Error creating sessions table:", error);
+  }
+};
+
+// Initialize sessions table
+createSessionsTable();
+
+app.use(session({
+  store: new PostgresStore({
+    conObject: {
+      connectionString: process.env.DATABASE_URL,
+    },
+    tableName: 'sessions',
+  }),
+  secret: "your-secret", // use a strong secret in production!
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false, sameSite: "lax" }
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

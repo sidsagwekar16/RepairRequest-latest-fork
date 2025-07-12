@@ -36,7 +36,7 @@ export default function Support() {
               <Link href="/support" className="text-blue-600 font-medium">
                 Support
               </Link>
-              <Link href="/">
+              <Link href="/login">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white ml-4">
                   Login to Portal
                 </Button>
@@ -45,7 +45,7 @@ export default function Support() {
             
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <Link href="/">
+              <Link href="/login">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                   Login to Portal
                 </Button>

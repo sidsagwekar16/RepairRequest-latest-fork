@@ -32,7 +32,7 @@ export default function Terms() {
               <Link href="/support" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Support
               </Link>
-              <Link href="/">
+              <Link href="/login">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white ml-4">
                   Login to Portal
                 </Button>
@@ -41,7 +41,7 @@ export default function Terms() {
             
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <Link href="/">
+              <Link href="/login">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                   Login to Portal
                 </Button>

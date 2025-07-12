@@ -95,11 +95,17 @@ export default function Navbar({ toggleMobileSidebar, user }: NavbarProps) {
                     </DropdownMenuItem>
                   </Link>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <a href="/api/logout" className="cursor-pointer">
-                      <span className="material-icons text-sm mr-2">logout</span>
-                      Sign Out
-                    </a>
+                  <DropdownMenuItem 
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await fetch("/api/logout", { credentials: "include" });
+                      // Clear React Query cache
+                      queryClient.clear();
+                      window.location.href = "/landing";
+                    }}
+                  >
+                    <span className="material-icons text-sm mr-2">logout</span>
+                    Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

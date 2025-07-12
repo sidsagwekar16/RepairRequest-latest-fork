@@ -1,0 +1,6 @@
+email,firstName,lastName,role,organizationId
+john.doe@example.com,John,Doe,requester,1
+jane.smith@example.com,Jane,Smith,admin,1
+mike.johnson@example.com,Mike,Johnson,maintenance,1
+sarah.wilson@example.com,Sarah,Wilson,requester,1
+super.admin@example.com,Super,Admin,super_admin, 

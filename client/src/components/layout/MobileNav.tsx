@@ -1,11 +1,11 @@
-import { Link, useLocation } from "wouter";
+import { Link, useLocation } from "react-router-dom";
 
 interface MobileNavProps {
   user: any;
 }
 
 export default function MobileNav({ user }: MobileNavProps) {
-  const [location] = useLocation();
+  const location = useLocation();
   const isAdmin = user?.role === 'admin';
   const isSuperAdmin = user?.role === 'super_admin';
   const isMaintenance = user?.role === 'maintenance' || user?.role === 'admin';
@@ -15,29 +15,29 @@ export default function MobileNav({ user }: MobileNavProps) {
     return (
       <div className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-10">
         <div className="grid grid-cols-4">
-          <Link href="/">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">dashboard</span>
               <span className="text-xs mt-1">Dashboard</span>
             </div>
           </Link>
           
-          <Link href="/admin/organizations">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/admin/organizations' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/admin/organizations">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/admin/organizations' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">business</span>
               <span className="text-xs mt-1">Organizations</span>
             </div>
           </Link>
           
-          <Link href="/admin/buildings-facilities">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/admin/buildings-facilities' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/admin/buildings-facilities">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/admin/buildings-facilities' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">domain</span>
               <span className="text-xs mt-1">Buildings</span>
             </div>
           </Link>
           
-          <Link href="/manage-requests">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/manage-requests' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/manage-requests">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/manage-requests' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">manage_accounts</span>
               <span className="text-xs mt-1">Manage</span>
             </div>
@@ -52,29 +52,29 @@ export default function MobileNav({ user }: MobileNavProps) {
     return (
       <div className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-10">
         <div className="grid grid-cols-4">
-          <Link href="/">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">dashboard</span>
               <span className="text-xs mt-1">Dashboard</span>
             </div>
           </Link>
           
-          <Link href="/manage-requests">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/manage-requests' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/manage-requests">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/manage-requests' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">manage_accounts</span>
               <span className="text-xs mt-1">Manage</span>
             </div>
           </Link>
           
-          <Link href="/room-history">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/room-history' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/room-history">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/room-history' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">history</span>
               <span className="text-xs mt-1">History</span>
             </div>
           </Link>
           
-          <Link href="/reports">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/reports' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/reports">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/reports' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">assessment</span>
               <span className="text-xs mt-1">Reports</span>
             </div>
@@ -89,29 +89,29 @@ export default function MobileNav({ user }: MobileNavProps) {
     return (
       <div className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-10">
         <div className="grid grid-cols-4">
-          <Link href="/">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">dashboard</span>
               <span className="text-xs mt-1">Dashboard</span>
             </div>
           </Link>
           
-          <Link href="/assigned-requests">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/assigned-requests' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/assigned-requests">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/assigned-requests' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">engineering</span>
               <span className="text-xs mt-1">Assigned</span>
             </div>
           </Link>
           
-          <Link href="/new-building-request">
-            <div className={`flex flex-col items-center justify-center py-2 ${(location === '/new-facilities-request' || location === '/new-building-request') ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/new-building-request">
+            <div className={`flex flex-col items-center justify-center py-2 ${(location.pathname === '/new-facilities-request' || location.pathname === '/new-building-request') ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">add_circle</span>
               <span className="text-xs mt-1">New</span>
             </div>
           </Link>
           
-          <Link href="/manage-requests">
-            <div className={`flex flex-col items-center justify-center py-2 ${location === '/manage-requests' ? 'text-primary' : 'text-gray-600'}`}>
+          <Link to="/manage-requests">
+            <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/manage-requests' ? 'text-primary' : 'text-gray-600'}`}>
               <span className="material-icons">manage_accounts</span>
               <span className="text-xs mt-1">Manage</span>
             </div>
@@ -125,29 +125,29 @@ export default function MobileNav({ user }: MobileNavProps) {
   return (
     <div className="md:hidden bg-white border-t border-gray-200 fixed bottom-0 left-0 right-0 z-10">
       <div className="grid grid-cols-4">
-        <Link href="/">
-          <div className={`flex flex-col items-center justify-center py-2 ${location === '/' ? 'text-primary' : 'text-gray-600'}`}>
+        <Link to="/">
+          <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/' ? 'text-primary' : 'text-gray-600'}`}>
             <span className="material-icons">dashboard</span>
             <span className="text-xs mt-1">Dashboard</span>
           </div>
         </Link>
         
-        <Link href="/my-requests">
-          <div className={`flex flex-col items-center justify-center py-2 ${location === '/my-requests' ? 'text-primary' : 'text-gray-600'}`}>
+        <Link to="/my-requests">
+          <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/my-requests' ? 'text-primary' : 'text-gray-600'}`}>
             <span className="material-icons">assignment</span>
             <span className="text-xs mt-1">Requests</span>
           </div>
         </Link>
         
-        <Link href="/new-building-request">
-          <div className={`flex flex-col items-center justify-center py-2 ${(location === '/new-facilities-request' || location === '/new-building-request') ? 'text-primary' : 'text-gray-600'}`}>
+        <Link to="/new-building-request">
+          <div className={`flex flex-col items-center justify-center py-2 ${(location.pathname === '/new-facilities-request' || location.pathname === '/new-building-request') ? 'text-primary' : 'text-gray-600'}`}>
             <span className="material-icons">add_circle</span>
             <span className="text-xs mt-1">New</span>
           </div>
         </Link>
         
-        <Link href="/room-history">
-          <div className={`flex flex-col items-center justify-center py-2 ${location === '/room-history' ? 'text-primary' : 'text-gray-600'}`}>
+        <Link to="/room-history">
+          <div className={`flex flex-col items-center justify-center py-2 ${location.pathname === '/room-history' ? 'text-primary' : 'text-gray-600'}`}>
             <span className="material-icons">history</span>
             <span className="text-xs mt-1">History</span>
           </div>
