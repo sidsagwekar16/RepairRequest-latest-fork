@@ -229,7 +229,7 @@ export default function BulkUserImportModal() {
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="w-full max-w-full sm:max-w-2xl px-2 py-6 overflow-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle>Bulk User Import</DialogTitle>
           <DialogDescription>
@@ -257,9 +257,10 @@ export default function BulkUserImportModal() {
             <Input
               type="file"
               accept=".csv,text/csv"
+              className="w-full"
               onChange={(e) => e.target.files && handleFile(e.target.files[0])}
             />
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-gray-500 flex flex-col sm:flex-row items-start sm:items-center gap-1 sm:gap-2">
               <a 
                 href="/sample-users.csv" 
                 download 
@@ -267,7 +268,7 @@ export default function BulkUserImportModal() {
               >
                 Download sample CSV
               </a>
-              <span className="ml-2">- Use this as a template for your import</span>
+              <span>- Use this as a template for your import</span>
             </div>
           </div>
         )}
@@ -285,50 +286,57 @@ export default function BulkUserImportModal() {
                 <li><strong>organizationId</strong> - Organization ID (optional, leave empty for super_admin users)</li>
               </ul>
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {rawColumns.map((c) => (
-                    <TableHead key={c}>
-                      <div className="space-y-2">
-                        <div className="text-xs font-medium text-gray-700">{c}</div>
-                        <Select
-                          value={columnMap[c] ?? ""}
-                          onValueChange={(v) => setColumnMap({ ...columnMap, [c]: v as keyof CsvRow })}
-                        >
-                          <SelectTrigger className="w-40">
-                            <SelectValue placeholder="Select field..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="email">email*</SelectItem>
-                            <SelectItem value="firstName">firstName*</SelectItem>
-                            <SelectItem value="lastName">lastName*</SelectItem>
-                            <SelectItem value="role">role*</SelectItem>
-                            <SelectItem value="organizationId">organizationId</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.slice(0, 3).map((r, i) => (
-                  <TableRow key={i}>
-                    {r.map((cell, j) => (
-                      <TableCell key={j}>{cell}</TableCell>
+            <div className="space-y-6 w-full overflow-x-auto">
+              <Table className="w-full min-w-[200px]">
+                <TableHeader>
+                  <TableRow>
+                    {rawColumns.map((c) => (
+                      <TableHead key={c} className="min-w-[120px]">
+                        <div className="space-y-2">
+                          <div className="text-xs font-medium text-gray-700 break-words">{c}</div>
+                          <Select
+                            value={columnMap[c] ?? ""}
+                            onValueChange={(v) => setColumnMap({ ...columnMap, [c]: v as keyof CsvRow })}
+                          >
+                            <SelectTrigger className="w-full min-w-[100px]">
+                              <SelectValue placeholder="Select field..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="email">email*</SelectItem>
+                              <SelectItem value="firstName">firstName*</SelectItem>
+                              <SelectItem value="lastName">lastName*</SelectItem>
+                              <SelectItem value="role">role*</SelectItem>
+                              <SelectItem value="organizationId">organizationId</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableHead>
                     ))}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {rows.slice(0, 3).map((r, i) => (
+                    <TableRow key={i}>
+                      {r.map((cell, j) => (
+                        <TableCell key={j} className="truncate break-words max-w-[120px]">{cell}</TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
             <div className="space-y-4">
               {/* Mapping Status */}
               <div className="text-sm">
                 <p className="font-medium mb-2">Mapping Status:</p>
                 <div className="flex flex-wrap gap-2">
-                  {["email", "firstName", "lastName", "role"].map((field) => {
+                  {[
+                    "email",
+                    "firstName",
+                    "lastName",
+                    "role"
+                  ].map((field) => {
                     const isMapped = Object.values(columnMap).includes(field as keyof CsvRow);
                     return (
                       <div
@@ -348,13 +356,14 @@ export default function BulkUserImportModal() {
                   </div>
                 </div>
               </div>
-              
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setStep("upload")}>
+              <div className="flex flex-col-reverse mx-5 sm:flex-row justify-end gap-2">
+                <Button variant="outline" onClick={() => setStep("upload")}
+                  className="w-full sm:w-auto">
                   Back
                 </Button>
                 <Button 
                   onClick={proceedToPreview}
+                  className="w-full sm:w-auto"
                   disabled={!["email", "firstName", "lastName", "role"].every(field => 
                     Object.values(columnMap).includes(field as keyof CsvRow)
                   )}
@@ -369,31 +378,33 @@ export default function BulkUserImportModal() {
         {/* ---- STEP 3 Preview & Import ---- */}
         {step === "preview" && (
           <div className="space-y-6">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Org</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mappedRows.slice(0, 10).map((u, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{u.email}</TableCell>
-                    <TableCell>
-                      {u.firstName} {u.lastName}
-                    </TableCell>
-                    <TableCell>{u.role}</TableCell>
-                    <TableCell>{u.organizationId ?? "-"}</TableCell>
+            <div className="w-full overflow-x-auto">
+              <Table className="w-full min-w-[200px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="break-words">Email</TableHead>
+                    <TableHead className="break-words">Name</TableHead>
+                    <TableHead className="break-words">Role</TableHead>
+                    <TableHead className="break-words">Org</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setStep("map")}>
+                </TableHeader>
+                <TableBody>
+                  {mappedRows.slice(0, 10).map((u, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="truncate break-words max-w-[120px]">{u.email}</TableCell>
+                      <TableCell className="truncate break-words max-w-[120px]">
+                        {u.firstName} {u.lastName}
+                      </TableCell>
+                      <TableCell className="truncate break-words max-w-[120px]">{u.role}</TableCell>
+                      <TableCell className="truncate break-words max-w-[120px]">{u.organizationId ?? "-"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            <div className="flex flex-col sm:flex-row justify-end gap-2">
+              <Button variant="outline" onClick={() => setStep("map")}
+                className="w-full sm:w-auto">
                 Back
               </Button>
               <Button
@@ -404,6 +415,7 @@ export default function BulkUserImportModal() {
                   console.log("mappedRows type:", typeof mappedRows);
                   bulkMutation.mutate(mappedRows);
                 }}
+                className="w-full sm:w-auto"
                 disabled={bulkMutation.isPending}
               >
                 {bulkMutation.isPending ? "Importing..." : `Import ${mappedRows.length} Users`}

@@ -1,13 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RequestCard from "@/components/requests/RequestCard";
 
 export default function MyRequests() {
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
   
   const { data: requests, isLoading } = useQuery({
@@ -54,7 +54,7 @@ export default function MyRequests() {
                 </div>
               ) : requests?.length > 0 ? (
                 <ul className="divide-y divide-gray-200">
-                  {requests.map((request) => (
+                  {requests.map((request: any) => (
                     <RequestCard key={request.id} request={request} />
                   ))}
                 </ul>

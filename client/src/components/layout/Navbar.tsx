@@ -17,6 +17,41 @@ interface NavbarProps {
 }
 
 export default function Navbar({ toggleMobileSidebar, user }: NavbarProps) {
+  // Role-based nav items (copied from Sidebar)
+  const isAdmin = user?.role === 'admin';
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isMaintenance = user?.role === 'maintenance' || user?.role === 'admin';
+
+  const navItems = isSuperAdmin ? [
+    { href: "/dashboard", label: "Dashboard", icon: "dashboard", access: "super_admin" },
+    { href: "/admin/organizations", label: "Manage Organizations", icon: "business", access: "super_admin" },
+    { href: "/admin/buildings-facilities", label: "Buildings & Facilities", icon: "domain", access: "super_admin" },
+    { href: "/admin/users", label: "User Management", icon: "group", access: "super_admin" },
+    { href: "/manage-requests", label: "Manage Requests", icon: "manage_accounts", access: "super_admin" },
+    { href: "/reports", label: "Reports", icon: "assessment", access: "super_admin" },
+  ] : isAdmin ? [
+    { href: "/dashboard", label: "Dashboard", icon: "dashboard", access: "admin" },
+    // { href: "/admin/users", label: "User Management", icon: "group", access: "admin" },
+    { href: "/manage-requests", label: "Manage Requests", icon: "manage_accounts", access: "admin" },
+    { href: "/room-history", label: "Room History", icon: "history", access: "admin" },
+    { href: "/reports", label: "Reports", icon: "assessment", access: "admin" },
+    { href: "/assigned-requests", label: "Assigned to Me", icon: "engineering", access: "admin" },
+    { href: "/new-building-request", label: "New Repair Request", icon: "home_repair_service", access: "admin" },
+    { href: "/new-facilities-request", label: "New Labor Request", icon: "event_seat", access: "admin" },
+  ] : user?.role === 'maintenance' ? [
+    { href: "/dashboard", label: "Dashboard", icon: "dashboard", access: "maintenance" },
+    { href: "/assigned-requests", label: "Assigned to Me", icon: "engineering", access: "maintenance" },
+    { href: "/room-history", label: "Room History", icon: "history", access: "maintenance" },
+    { href: "/manage-requests", label: "Manage Requests", icon: "manage_accounts", access: "maintenance" },
+    { href: "/new-building-request", label: "New Repair Request", icon: "home_repair_service", access: "maintenance" },
+    { href: "/new-facilities-request", label: "New Facilities Request", icon: "event_seat", access: "maintenance" },
+  ] : [
+    { href: "/dashboard", label: "Dashboard", icon: "dashboard", access: "all" },
+    { href: "/new-building-request", label: "New Repair Request", icon: "home_repair_service", access: "all" },
+    { href: "/new-facilities-request", label: "New Labor Request", icon: "event_seat", access: "all" },
+    { href: "/my-requests", label: "My Requests", icon: "assignment", access: "all" },
+    { href: "/room-history", label: "Room History", icon: "history", access: "all" },
+  ];
 
   return (
     <nav className="bg-primary shadow-md">
@@ -70,30 +105,14 @@ export default function Navbar({ toggleMobileSidebar, user }: NavbarProps) {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <Link href="/">
-                    <DropdownMenuItem>
-                      <span className="material-icons text-sm mr-2">dashboard</span>
-                      Dashboard
-                    </DropdownMenuItem>
-                  </Link>
-                  <Link href="/my-requests">
-                    <DropdownMenuItem>
-                      <span className="material-icons text-sm mr-2">assignment</span>
-                      My Requests
-                    </DropdownMenuItem>
-                  </Link>
-                  <Link href="/new-facilities-request">
-                    <DropdownMenuItem>
-                      <span className="material-icons text-sm mr-2">event_seat</span>
-                      New Facilities Request
-                    </DropdownMenuItem>
-                  </Link>
-                  <Link href="/new-building-request">
-                    <DropdownMenuItem>
-                      <span className="material-icons text-sm mr-2">home_repair_service</span>
-                      New Building Request
-                    </DropdownMenuItem>
-                  </Link>
+                  {navItems.map((item) => (
+                    <Link href={item.href} key={item.href}>
+                      <DropdownMenuItem>
+                        <span className="material-icons text-sm mr-2">{item.icon}</span>
+                        {item.label}
+                      </DropdownMenuItem>
+                    </Link>
+                  ))}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={async (e) => {
