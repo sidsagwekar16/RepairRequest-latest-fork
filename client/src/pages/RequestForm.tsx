@@ -37,9 +37,18 @@ export default function RequestForm() {
   const [selectedFacility, setSelectedFacility] = useState<string>("");
 
   // Fetch organization facilities
-  const { data: facilities, isLoading: facilitiesLoading } = useQuery({
+  const { data: facilities, isLoading: facilitiesLoading, error: facilitiesError } = useQuery({
     queryKey: ["/api/facilities"],
+    queryFn: async () => {
+      const res = await fetch("http://localhost:5000/api/facilities", { credentials: "include" });
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`${res.status}: ${errorText}`);
+      }
+      return res.json();
+    },
   });
+
   
   const form = useForm<RequestFormValues>({
     resolver: zodResolver(requestFormSchema),
@@ -123,7 +132,11 @@ export default function RequestForm() {
                           <SelectContent>
                             {facilitiesLoading ? (
                               <SelectItem value="loading" disabled>Loading facilities...</SelectItem>
-                            ) : facilities && Array.isArray(facilities) ? (
+                            ) : facilitiesError ? (
+                              <SelectItem value="error" disabled>
+                                {facilitiesError.message.includes('401') ? 'You must be logged in to view facilities.' : 'Error loading facilities'}
+                              </SelectItem>
+                            ) : facilities && Array.isArray(facilities) && facilities.length > 0 ? (
                               facilities.map((facility: any) => (
                                 <SelectItem key={facility.id} value={facility.name}>
                                   {facility.name}

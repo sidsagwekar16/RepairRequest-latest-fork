@@ -28,7 +28,7 @@ export default function Sidebar({ isMobileOpen, closeMobileSidebar, user }: Side
     { href: "/admin/buildings-facilities", label: "Buildings & Facilities", icon: "domain", access: "super_admin" },
     { href: "/admin/users", label: "User Management", icon: "group", access: "super_admin" },
     { href: "/manage-requests", label: "Manage Requests", icon: "manage_accounts", access: "super_admin" },
-    { href: "/reports", label: "Reports", icon: "assessment", access: "super_admin" },
+    // { href: "/reports", label: "Reports", icon: "assessment", access: "super_admin" },
   ] : isAdmin ? [
     // Admin menu order
     { href: "/dashboard", label: "Dashboard", icon: "dashboard", access: "admin" },

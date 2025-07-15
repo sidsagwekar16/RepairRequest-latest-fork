@@ -53,6 +53,17 @@ app.use(session({
   cookie: { secure: false, sameSite: "lax" }
 }));
 
+// Middleware to set req.user and req.isAuthenticated for local login
+app.use((req, res, next) => {
+  if (req.session && req.session.user) {
+    req.user = req.session.user;
+    (req as any).isAuthenticated = () => true;
+  } else {
+    (req as any).isAuthenticated = () => false;
+  }
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

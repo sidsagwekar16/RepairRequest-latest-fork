@@ -452,8 +452,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Sending email notifications...");
       try {
         // Get organization and admin emails
-        const organization = await dbStorage.getOrganization(user.organizationId);
-        const adminEmails = await dbStorage.getOrganizationAdminEmails(user.organizationId);
+        const organization = user.organizationId !== undefined
+          ? await dbStorage.getOrganization(user.organizationId)
+          : undefined;
+        const adminEmails = user.organizationId !== undefined
+          ? await dbStorage.getOrganizationAdminEmails(user.organizationId)
+          : [];
         
         if (organization && adminEmails.length > 0) {
           await sendRequestNotificationEmails({
@@ -497,6 +501,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("=== PRIORITY FACILITIES HANDLER ===");
     console.log("Is authenticated:", req.isAuthenticated?.());
     console.log("User:", req.user);
+    console.log("Session at /api/facilities:", req.session);
     
     try {
       // Check authentication
@@ -1308,8 +1313,12 @@ function isAllowedEmail(email: string): boolean {
       console.log("Sending email notifications...");
       try {
         // Get organization and admin emails
-        const organization = await dbStorage.getOrganization(user.organizationId);
-        const adminEmails = await dbStorage.getOrganizationAdminEmails(user.organizationId);
+        const organization = user.organizationId !== undefined
+          ? await dbStorage.getOrganization(user.organizationId)
+          : undefined;
+        const adminEmails = user.organizationId !== undefined
+          ? await dbStorage.getOrganizationAdminEmails(user.organizationId)
+          : [];
         
         if (organization && adminEmails.length > 0) {
           await sendRequestNotificationEmails({
@@ -1666,22 +1675,24 @@ function isAllowedEmail(email: string): boolean {
   });
 
   // Get organization buildings - fixed authentication
-  app.get("/api/buildings", async (req: any, res) => {
+  app.get("/api/buildings", (req: any, res) => {
     try {
-      console.log("Buildings request started");
-      // Set up user authentication directly for immediate functionality
-      const userId = "111903725048847284592"; // Actual user ID from database
-      const user = {
-        id: "111903725048847284592",
-        email: "jeffemail111@gmail.com",
-        role: "user",
-        organizationId: 1
-      };
-      console.log("User info:", { userId, userRole: user.role, userOrg: user.organizationId });
-      
-      const buildings = await dbStorage.getBuildingsByOrganization(user.organizationId);
-      console.log("Buildings found:", buildings);
-      res.json(buildings);
+      if (!req.isAuthenticated?.() || !req.user) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      const user = req.user;
+      if (user.organizationId === undefined) {
+        return res.status(400).json({ message: "No organization assigned to user." });
+      }
+      dbStorage.getBuildingsByOrganization(user.organizationId)
+        .then(buildings => {
+          console.log("Buildings found:", buildings);
+          res.json(buildings);
+        })
+        .catch(error => {
+          console.error("Error fetching buildings:", error);
+          res.status(500).json({ message: "Failed to fetch buildings" });
+        });
     } catch (error) {
       console.error("Error fetching buildings:", error);
       res.status(500).json({ message: "Failed to fetch buildings" });
@@ -2615,6 +2626,7 @@ function isAllowedEmail(email: string): boolean {
         role: user.role,
         firstName: user.firstName || '',
         lastName: user.lastName || '',
+        organizationId: user.organizationId ?? undefined
       };
 
       return res.status(200).json({
