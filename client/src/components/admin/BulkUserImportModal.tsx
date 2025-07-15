@@ -57,7 +57,6 @@ export default function BulkUserImportModal() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ users: payload }),
-        credentials: "include",
       }).then(async (r) => {
         console.log("Response status:", r.status);
         console.log("Response ok:", r.ok);
