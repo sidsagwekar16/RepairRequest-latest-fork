@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import canterburyLogoPath from "@assets/one_line_logo-03 (1)_1749356183104.png";
 
 interface NavbarProps {
@@ -106,12 +106,12 @@ export default function Navbar({ toggleMobileSidebar, user }: NavbarProps) {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   {navItems.map((item) => (
-                    <Link href={item.href} key={item.href}>
-                      <DropdownMenuItem>
+                    <DropdownMenuItem key={item.href}>
+                      <Link to={item.href} className="flex items-center w-full">
                         <span className="material-icons text-sm mr-2">{item.icon}</span>
                         {item.label}
-                      </DropdownMenuItem>
-                    </Link>
+                      </Link>
+                    </DropdownMenuItem>
                   ))}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 

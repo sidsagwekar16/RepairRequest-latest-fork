@@ -691,82 +691,156 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create building (super admin only)
-  app.post("/api/admin/buildings", async (req: any, res) => {
+  app.post("/api/admin/buildings", authMiddleware, async (req: any, res) => {
     try {
-      console.log("Creating building:", req.body);
-      const buildingData = req.body;
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
+      // Ensure roomNumbers is always an array
+      let roomNumbers = [];
+      if (Array.isArray(req.body.roomNumbers)) {
+        roomNumbers = req.body.roomNumbers;
+      } else if (typeof req.body.roomNumbers === 'string' && req.body.roomNumbers.trim() !== '') {
+        roomNumbers = req.body.roomNumbers.split(',').map((s: string) => s.trim());
+      }
+      const buildingData = {
+        organizationId: req.body.organizationId,
+        name: req.body.name,
+        address: req.body.address,
+        description: req.body.description,
+        room_numbers: roomNumbers, // Always an array
+        isActive: true,
+      };
+      
       const building = await dbStorage.createBuilding(buildingData);
-      res.json(building);
+      // Map DB result to ensure roomNumbers is always an array
+      const result = {
+        ...building,
+        roomNumbers: building.roomNumbers ?? [],
+      };
+      res.json(result);
     } catch (error) {
       console.error("Error creating building:", error);
-      res.status(500).json({ error: "Failed to create building" });
+      res.status(500).json({ message: "Failed to create building" });
     }
   });
 
   // Update building (super admin only)
-  app.patch("/api/admin/buildings/:id", async (req: any, res) => {
+  app.patch("/api/admin/buildings/:id", authMiddleware, async (req: any, res) => {
     try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
       const buildingId = parseInt(req.params.id);
-      const updates = req.body;
-      console.log("Updating building:", buildingId, updates);
+      // Ensure roomNumbers is always an array
+      let updateRoomNumbers = [];
+      if (Array.isArray(req.body.roomNumbers)) {
+        updateRoomNumbers = req.body.roomNumbers;
+      } else if (typeof req.body.roomNumbers === 'string' && req.body.roomNumbers.trim() !== '') {
+        updateRoomNumbers = req.body.roomNumbers.split(',').map((s: string) => s.trim());
+      }
+      const updates = {
+        name: req.body.name,
+        address: req.body.address,
+        description: req.body.description,
+        room_numbers: updateRoomNumbers, // Always an array
+      };
+      
       const building = await dbStorage.updateBuilding(buildingId, updates);
-      res.json(building);
+      // Map DB result to ensure roomNumbers is always an array
+      const result = {
+        ...building,
+        roomNumbers: building.roomNumbers ?? [],
+      };
+      res.json(result);
     } catch (error) {
       console.error("Error updating building:", error);
-      res.status(500).json({ error: "Failed to update building" });
+      res.status(500).json({ message: "Failed to update building" });
     }
   });
 
   // Delete building (super admin only)
-  app.delete("/api/admin/buildings/:id", async (req: any, res) => {
+  app.delete("/api/admin/buildings/:id", authMiddleware, async (req: any, res) => {
     try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
       const buildingId = parseInt(req.params.id);
-      console.log("Deleting building:", buildingId);
       await dbStorage.deleteBuilding(buildingId);
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting building:", error);
-      res.status(500).json({ error: "Failed to delete building" });
+      res.status(500).json({ message: "Failed to delete building" });
     }
   });
 
   // Create facility (super admin only)
-  app.post("/api/admin/facilities", async (req: any, res) => {
+  app.post("/api/admin/facilities", authMiddleware, async (req: any, res) => {
     try {
-      console.log("Creating facility:", req.body);
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
       const facilityData = req.body;
       const facility = await dbStorage.createFacility(facilityData);
       res.json(facility);
     } catch (error) {
       console.error("Error creating facility:", error);
-      res.status(500).json({ error: "Failed to create facility" });
+      res.status(500).json({ message: "Failed to create facility" });
     }
   });
 
   // Update facility (super admin only)
-  app.patch("/api/admin/facilities/:id", async (req: any, res) => {
+  app.patch("/api/admin/facilities/:id", authMiddleware, async (req: any, res) => {
     try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
       const facilityId = parseInt(req.params.id);
       const updates = req.body;
-      console.log("Updating facility:", facilityId, updates);
       const facility = await dbStorage.updateFacility(facilityId, updates);
       res.json(facility);
     } catch (error) {
       console.error("Error updating facility:", error);
-      res.status(500).json({ error: "Failed to update facility" });
+      res.status(500).json({ message: "Failed to update facility" });
     }
   });
 
   // Delete facility (super admin only)
-  app.delete("/api/admin/facilities/:id", async (req: any, res) => {
+  app.delete("/api/admin/facilities/:id", authMiddleware, async (req: any, res) => {
     try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
       const facilityId = parseInt(req.params.id);
-      console.log("Deleting facility:", facilityId);
       await dbStorage.deleteFacility(facilityId);
       res.json({ success: true });
     } catch (error) {
       console.error("Error deleting facility:", error);
-      res.status(500).json({ error: "Failed to delete facility" });
+      res.status(500).json({ message: "Failed to delete facility" });
     }
   });
 
@@ -1751,7 +1825,7 @@ function isAllowedEmail(email: string): boolean {
   // Create organization (super admin only)
   app.post("/api/admin/organizations", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
       
       if (user?.role !== 'super_admin') {
@@ -1777,7 +1851,7 @@ function isAllowedEmail(email: string): boolean {
   // Get buildings for a specific organization (super admin only)
   app.get("/api/admin/buildings/:orgId", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
       
       if (user?.role !== 'super_admin') {
@@ -1796,24 +1870,36 @@ function isAllowedEmail(email: string): boolean {
   // Create building (super admin only)
   app.post("/api/admin/buildings", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
       
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
       
+      // Ensure roomNumbers is always an array
+      let roomNumbers = [];
+      if (Array.isArray(req.body.roomNumbers)) {
+        roomNumbers = req.body.roomNumbers;
+      } else if (typeof req.body.roomNumbers === 'string' && req.body.roomNumbers.trim() !== '') {
+        roomNumbers = req.body.roomNumbers.split(',').map((s: string) => s.trim());
+      }
       const buildingData = {
         organizationId: req.body.organizationId,
         name: req.body.name,
         address: req.body.address,
         description: req.body.description,
-        roomNumbers: req.body.roomNumbers || [],
+        room_numbers: roomNumbers, // Always an array
         isActive: true,
       };
       
       const building = await dbStorage.createBuilding(buildingData);
-      res.json(building);
+      // Map DB result to ensure roomNumbers is always an array
+      const result = {
+        ...building,
+        roomNumbers: building.roomNumbers ?? [],
+      };
+      res.json(result);
     } catch (error) {
       console.error("Error creating building:", error);
       res.status(500).json({ message: "Failed to create building" });
@@ -1823,7 +1909,7 @@ function isAllowedEmail(email: string): boolean {
   // Update building (super admin only)
   app.patch("/api/admin/buildings/:id", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
       
       if (user?.role !== 'super_admin') {
@@ -1831,15 +1917,27 @@ function isAllowedEmail(email: string): boolean {
       }
       
       const buildingId = parseInt(req.params.id);
+      // Ensure roomNumbers is always an array
+      let updateRoomNumbers = [];
+      if (Array.isArray(req.body.roomNumbers)) {
+        updateRoomNumbers = req.body.roomNumbers;
+      } else if (typeof req.body.roomNumbers === 'string' && req.body.roomNumbers.trim() !== '') {
+        updateRoomNumbers = req.body.roomNumbers.split(',').map((s: string) => s.trim());
+      }
       const updates = {
         name: req.body.name,
         address: req.body.address,
         description: req.body.description,
-        roomNumbers: req.body.roomNumbers,
+        room_numbers: updateRoomNumbers, // Always an array
       };
       
       const building = await dbStorage.updateBuilding(buildingId, updates);
-      res.json(building);
+      // Map DB result to ensure roomNumbers is always an array
+      const result = {
+        ...building,
+        roomNumbers: building.roomNumbers ?? [],
+      };
+      res.json(result);
     } catch (error) {
       console.error("Error updating building:", error);
       res.status(500).json({ message: "Failed to update building" });
@@ -1849,7 +1947,7 @@ function isAllowedEmail(email: string): boolean {
   // Delete building (super admin only)
   app.delete("/api/admin/buildings/:id", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
       
       if (user?.role !== 'super_admin') {
@@ -1868,7 +1966,7 @@ function isAllowedEmail(email: string): boolean {
   // Get facilities for a specific organization (super admin only)
   app.get("/api/admin/facilities/:orgId", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
       
       if (user?.role !== 'super_admin') {
@@ -1887,158 +1985,7 @@ function isAllowedEmail(email: string): boolean {
   // Create facility (super admin only)
   app.post("/api/admin/facilities", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await dbStorage.getUser(userId);
-      
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      
-      const facilityData = {
-        organizationId: req.body.organizationId,
-        name: req.body.name,
-        description: req.body.description,
-        category: req.body.category,
-        availableItems: req.body.availableItems || [],
-        sortOrder: req.body.sortOrder || 0,
-        isActive: true,
-      };
-      
-      const facility = await dbStorage.createFacility(facilityData);
-      res.json(facility);
-    } catch (error) {
-      console.error("Error creating facility:", error);
-      res.status(500).json({ message: "Failed to create facility" });
-    }
-  });
-
-  // Update facility (super admin only)
-  app.patch("/api/admin/facilities/:id", authMiddleware, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await dbStorage.getUser(userId);
-      
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      
-      const facilityId = parseInt(req.params.id);
-      const updates = {
-        name: req.body.name,
-        description: req.body.description,
-        category: req.body.category,
-        availableItems: req.body.availableItems,
-        sortOrder: req.body.sortOrder,
-      };
-      
-      const facility = await dbStorage.updateFacility(facilityId, updates);
-      res.json(facility);
-    } catch (error) {
-      console.error("Error updating facility:", error);
-      res.status(500).json({ message: "Failed to update facility" });
-    }
-  });
-
-  // Delete facility (super admin only)
-  app.delete("/api/admin/facilities/:id", authMiddleware, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await dbStorage.getUser(userId);
-      
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      
-      const facilityId = parseInt(req.params.id);
-      await dbStorage.deleteFacility(facilityId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting facility:", error);
-      res.status(500).json({ message: "Failed to delete facility" });
-    }
-  });
-
-  // Get facilities for a specific organization (super admin only)
-  app.get("/api/admin/facilities/:orgId", authMiddleware, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await dbStorage.getUser(userId);
-      
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      
-      const orgId = parseInt(req.params.orgId);
-      const facilities = await dbStorage.getFacilitiesByOrganization(orgId);
-      res.json(facilities);
-    } catch (error) {
-      console.error("Error fetching facilities:", error);
-      res.status(500).json({ message: "Failed to fetch facilities" });
-    }
-  });
-
-  // Create building (super admin only)
-  app.post("/api/admin/buildings", authMiddleware, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await dbStorage.getUser(userId);
-      
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      
-      const buildingData = req.body;
-      const building = await dbStorage.createBuilding(buildingData);
-      res.json(building);
-    } catch (error) {
-      console.error("Error creating building:", error);
-      res.status(500).json({ message: "Failed to create building" });
-    }
-  });
-
-  // Update building (super admin only)
-  app.patch("/api/admin/buildings/:id", authMiddleware, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await dbStorage.getUser(userId);
-      
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      
-      const buildingId = parseInt(req.params.id);
-      const updates = req.body;
-      const building = await dbStorage.updateBuilding(buildingId, updates);
-      res.json(building);
-    } catch (error) {
-      console.error("Error updating building:", error);
-      res.status(500).json({ message: "Failed to update building" });
-    }
-  });
-
-  // Delete building (super admin only)
-  app.delete("/api/admin/buildings/:id", authMiddleware, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
-      const user = await dbStorage.getUser(userId);
-      
-      if (user?.role !== 'super_admin') {
-        return res.status(403).json({ message: "Super admin access required" });
-      }
-      
-      const buildingId = parseInt(req.params.id);
-      await dbStorage.deleteBuilding(buildingId);
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting building:", error);
-      res.status(500).json({ message: "Failed to delete building" });
-    }
-  });
-
-  // Create facility (super admin only)
-  app.post("/api/admin/facilities", authMiddleware, async (req: any, res) => {
-    try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
       
       if (user?.role !== 'super_admin') {
@@ -2057,7 +2004,7 @@ function isAllowedEmail(email: string): boolean {
   // Update facility (super admin only)
   app.patch("/api/admin/facilities/:id", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
       
       if (user?.role !== 'super_admin') {
@@ -2077,7 +2024,180 @@ function isAllowedEmail(email: string): boolean {
   // Delete facility (super admin only)
   app.delete("/api/admin/facilities/:id", authMiddleware, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
+      const facilityId = parseInt(req.params.id);
+      await dbStorage.deleteFacility(facilityId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting facility:", error);
+      res.status(500).json({ message: "Failed to delete facility" });
+    }
+  });
+
+  // Get facilities for a specific organization (super admin only)
+  app.get("/api/admin/facilities/:orgId", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
+      const orgId = parseInt(req.params.orgId);
+      const facilities = await dbStorage.getFacilitiesByOrganization(orgId);
+      res.json(facilities);
+    } catch (error) {
+      console.error("Error fetching facilities:", error);
+      res.status(500).json({ message: "Failed to fetch facilities" });
+    }
+  });
+
+  // Create building (super admin only)
+  app.post("/api/admin/buildings", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
+      // Ensure roomNumbers is always an array
+      let roomNumbers = [];
+      if (Array.isArray(req.body.roomNumbers)) {
+        roomNumbers = req.body.roomNumbers;
+      } else if (typeof req.body.roomNumbers === 'string' && req.body.roomNumbers.trim() !== '') {
+        roomNumbers = req.body.roomNumbers.split(',').map((s: string) => s.trim());
+      }
+      const buildingData = {
+        organizationId: req.body.organizationId,
+        name: req.body.name,
+        address: req.body.address,
+        description: req.body.description,
+        room_numbers: roomNumbers, // Always an array
+        isActive: true,
+      };
+      
+      const building = await dbStorage.createBuilding(buildingData);
+      // Map DB result to ensure roomNumbers is always an array
+      const result = {
+        ...building,
+        roomNumbers: building.roomNumbers ?? [],
+      };
+      res.json(result);
+    } catch (error) {
+      console.error("Error creating building:", error);
+      res.status(500).json({ message: "Failed to create building" });
+    }
+  });
+
+  // Update building (super admin only)
+  app.patch("/api/admin/buildings/:id", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
+      const buildingId = parseInt(req.params.id);
+      // Ensure roomNumbers is always an array
+      let updateRoomNumbers = [];
+      if (Array.isArray(req.body.roomNumbers)) {
+        updateRoomNumbers = req.body.roomNumbers;
+      } else if (typeof req.body.roomNumbers === 'string' && req.body.roomNumbers.trim() !== '') {
+        updateRoomNumbers = req.body.roomNumbers.split(',').map((s: string) => s.trim());
+      }
+      const updates = {
+        name: req.body.name,
+        address: req.body.address,
+        description: req.body.description,
+        room_numbers: updateRoomNumbers, // Always an array
+      };
+      
+      const building = await dbStorage.updateBuilding(buildingId, updates);
+      // Map DB result to ensure roomNumbers is always an array
+      const result = {
+        ...building,
+        roomNumbers: building.roomNumbers ?? [],
+      };
+      res.json(result);
+    } catch (error) {
+      console.error("Error updating building:", error);
+      res.status(500).json({ message: "Failed to update building" });
+    }
+  });
+
+  // Delete building (super admin only)
+  app.delete("/api/admin/buildings/:id", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
+      const buildingId = parseInt(req.params.id);
+      await dbStorage.deleteBuilding(buildingId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting building:", error);
+      res.status(500).json({ message: "Failed to delete building" });
+    }
+  });
+
+  // Create facility (super admin only)
+  app.post("/api/admin/facilities", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
+      const facilityData = req.body;
+      const facility = await dbStorage.createFacility(facilityData);
+      res.json(facility);
+    } catch (error) {
+      console.error("Error creating facility:", error);
+      res.status(500).json({ message: "Failed to create facility" });
+    }
+  });
+
+  // Update facility (super admin only)
+  app.patch("/api/admin/facilities/:id", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await dbStorage.getUser(userId);
+      
+      if (user?.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
+      const facilityId = parseInt(req.params.id);
+      const updates = req.body;
+      const facility = await dbStorage.updateFacility(facilityId, updates);
+      res.json(facility);
+    } catch (error) {
+      console.error("Error updating facility:", error);
+      res.status(500).json({ message: "Failed to update facility" });
+    }
+  });
+
+  // Delete facility (super admin only)
+  app.delete("/api/admin/facilities/:id", authMiddleware, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
       
       if (user?.role !== 'super_admin') {
