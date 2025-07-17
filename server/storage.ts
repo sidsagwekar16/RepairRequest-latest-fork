@@ -35,6 +35,31 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sql, or, isNull, asc } from "drizzle-orm";
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import fs from 'fs';
+import path from 'path';
+
+// S3 client setup using env variables
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+const S3_BUCKET = process.env.AWS_S3_BUCKET;
+
+// Helper to upload to S3
+async function uploadFileToS3(key: string, fileBuffer: Buffer, contentType: string) {
+  const params = {
+    Bucket: S3_BUCKET!,
+    Key: key,
+    Body: fileBuffer,
+    ContentType: contentType,
+  };
+  await s3.send(new PutObjectCommand(params));
+  return `https://${S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+}
 
 // Interface for storage operations
 export interface IStorage {
@@ -76,7 +101,7 @@ export interface IStorage {
   getRequestDetails(id: number): Promise<any>;
   
   // Photo uploads
-  saveRequestPhoto(photoData: InsertRequestPhoto): Promise<RequestPhoto>;
+  saveRequestPhoto(photoData: InsertRequestPhoto & { fileBuffer?: Buffer }): Promise<RequestPhoto>;
   getRequestPhotos(requestId: number): Promise<RequestPhoto[]>;
   
   // Dashboard stats
@@ -928,28 +953,33 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Photo uploads
-  async saveRequestPhoto(photoData: InsertRequestPhoto): Promise<RequestPhoto> {
+  async saveRequestPhoto(photoData: InsertRequestPhoto & { fileBuffer?: Buffer }): Promise<RequestPhoto> {
     try {
       console.log("Saving photo with data:", photoData);
-      
+      let photoUrl = photoData.photoUrl || `uploads/photos/${photoData.filename}`;
+      let filePath = photoData.filePath;
+      // If fileBuffer is provided, upload to S3
+      if (photoData.fileBuffer) {
+        const s3Key = `requests/${photoData.requestId}/${photoData.filename}`;
+        photoUrl = await uploadFileToS3(s3Key, photoData.fileBuffer, photoData.mimeType || 'application/octet-stream');
+        filePath = photoUrl; // Store S3 URL as filePath
+      }
       // Map the data to match the database schema
       const photoToSave = {
         requestId: photoData.requestId,
-        photoUrl: photoData.photoUrl || `uploads/photos/${photoData.filename}`,
+        photoUrl,
         filename: photoData.filename,
         originalFilename: photoData.originalFilename,
-        filePath: photoData.filePath,
+        filePath,
         mimeType: photoData.mimeType,
         size: photoData.size,
         caption: photoData.caption,
         uploadedById: photoData.uploadedById
       };
-      
       const [photo] = await db
         .insert(requestPhotos)
         .values(photoToSave)
         .returning();
-      
       return photo;
     } catch (error) {
       console.error("Error saving request photo:", error);

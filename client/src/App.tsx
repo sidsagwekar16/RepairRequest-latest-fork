@@ -182,7 +182,8 @@ function AppContent() {
           </>
         ) : (
           <>
-            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/" element={<LandingPage />} />
+           
             <Route path="*" element={<LandingPage />} />
           </>
         )}

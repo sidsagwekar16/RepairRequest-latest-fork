@@ -1301,71 +1301,33 @@ function isAllowedEmail(email: string): boolean {
       if (req.files && req.files.length > 0) {
         try {
           console.log(`Processing ${req.files.length} uploaded photos`);
-          
-          // Process each uploaded file
           for (const file of req.files) {
             console.log(`Processing photo: ${file.originalname}`);
-            
-            // Enhanced file verification
-            console.log(`=== FILE VERIFICATION FOR ${file.filename} ===`);
-            console.log(`Original file object:`, {
-              filename: file.filename,
-              originalname: file.originalname,
-              path: file.path,
-              destination: file.destination,
-              size: file.size,
-              mimetype: file.mimetype
-            });
-            
-            const expectedPath = path.join(uploadDir, file.filename);
-            const fileExists = fs.existsSync(expectedPath);
-            console.log(`Expected path: ${expectedPath}`);
-            console.log(`File exists at expected path: ${fileExists}`);
-            
-            // Check if file exists at the original multer path
-            const multerPathExists = fs.existsSync(file.path);
-            console.log(`File exists at multer path (${file.path}): ${multerPathExists}`);
-            
-            if (!fileExists && !multerPathExists) {
-              console.error(`CRITICAL: File not found at either expected path or multer path!`);
-              console.error(`Directory contents:`, fs.readdirSync(uploadDir));
-              continue; // Skip this file if it wasn't properly saved
-            }
-            
-            // Use whichever path has the file
-            const actualPath = fileExists ? expectedPath : file.path;
-            const stats = fs.statSync(actualPath);
-            console.log(`File stats:`, { size: stats.size, expectedSize: file.size });
-            
-            if (stats.size !== file.size) {
-              console.error(`File size mismatch for ${file.filename}: expected ${file.size}, got ${stats.size}`);
-              continue; // Skip corrupted files
-            }
-            
-            console.log(`File verification successful for ${file.filename}`);
-            console.log(`=== END FILE VERIFICATION  ===`);
-            
-            // Ensure file was actually saved before creating database record
-            if (!fileExists && !multerPathExists) {
-              console.error(`File not saved properly, skipping database record for ${file.filename}`);
+            // Read file buffer for S3 upload
+            const fileBuffer = file.buffer || (file.path ? fs.readFileSync(file.path) : undefined);
+            if (!fileBuffer) {
+              console.error(`Could not read file buffer for ${file.filename}`);
               continue;
             }
-            
             // Create a photo record for each uploaded file
             const photoData = {
               requestId: createdRequest.id,
               filename: file.filename,
               originalFilename: file.originalname,
-              filePath: actualPath, // Use the verified path
+              filePath: undefined, // S3 URL will be set in storage
               mimeType: file.mimetype,
               size: file.size,
               caption: `Building request photo - ${file.originalname}`,
               uploadedById: userId,
-              photoUrl: `uploads/photos/${file.filename}`
+              photoUrl: undefined, // S3 URL will be set in storage
+              fileBuffer
             };
-            
             await dbStorage.saveRequestPhoto(photoData);
-            console.log(`Photo saved successfully: ${file.originalname} (${file.size} bytes)`);
+            // Optionally, delete the local file after upload
+            if (file.path) {
+              try { require('fs').unlinkSync(file.path); } catch (e) { /* ignore */ }
+            }
+            console.log(`Photo uploaded to S3 and saved: ${file.originalname} (${file.size} bytes)`);
           }
         } catch (error) {
           console.error("Error saving photos:", error);
@@ -2254,21 +2216,27 @@ function isAllowedEmail(email: string): boolean {
         return res.status(400).json({ message: "No file uploaded or invalid file type" });
       }
       
-      // Save photo information to database
+      // Read file buffer for S3 upload
+      const fileBuffer = req.file.buffer || (req.file.path ? require('fs').readFileSync(req.file.path) : undefined);
+      if (!fileBuffer) {
+        return res.status(400).json({ message: "Could not read file buffer for upload" });
+      }
+      // Save photo information to database, uploading to S3
       const photoData = {
         requestId,
         filename: req.file.filename,
         originalFilename: req.file.originalname,
-        filePath: req.file.path,
+        filePath: undefined, 
         mimeType: req.file.mimetype,
         size: req.file.size,
         uploadedById: userId,
-        photo_url: `uploads/photos/${req.file.filename}` // Use photo_url to match database column name
+        photoUrl: undefined, 
+        fileBuffer
       };
-      
       const photo = await dbStorage.saveRequestPhoto(photoData);
-      
-      // Return the saved photo information
+      if (req.file.path) {
+        try { require('fs').unlinkSync(req.file.path); } catch (e) { /* ignore */ }
+      }
       res.status(201).json(photo);
     } catch (error) {
       console.error("Error uploading photo:", error);
