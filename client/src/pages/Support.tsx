@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Mail, Phone, Clock, MessageCircle } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import logoPath from "@assets/RepairRequest Logo Transparent_1750783382845.png";
 
 export default function Support() {
@@ -24,19 +24,19 @@ export default function Support() {
             
             {/* Navigation Menu */}
             <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/landing" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <Link to="/" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Home
               </Link>
-              <Link href="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <Link to="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Pricing
               </Link>
-              <Link href="/faq" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <Link to="/faq" className="text-gray-600 hover:text-blue-600 transition-colors">
                 FAQ
               </Link>
-              <Link href="/support" className="text-blue-600 font-medium">
+              <Link to="/support" className="text-blue-600 font-medium">
                 Support
               </Link>
-              <Link href="/login">
+              <Link to="/login">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white ml-4">
                   Login to Portal
                 </Button>
@@ -45,7 +45,7 @@ export default function Support() {
             
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <Link href="/login">
+              <Link to="/login">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                   Login to Portal
                 </Button>
@@ -238,7 +238,7 @@ export default function Support() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <Link href="/landing">
+              <Link to="/landing">
                 <div className="flex items-center space-x-3 mb-4 cursor-pointer">
                   <img src={logoPath} alt="RepairRequest Logo" className="w-8 h-8" />
                   <div>
@@ -255,19 +255,19 @@ export default function Support() {
             <div>
               <h4 className="text-lg font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/" className="hover:text-white transition-colors">Portal Login</Link></li>
-                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/support" className="hover:text-white transition-colors">Support</Link></li>
+                <li><Link to="/login" className="hover:text-white transition-colors">Portal Login</Link></li>
+                <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link to="/support" className="hover:text-white transition-colors">Support</Link></li>
               </ul>
             </div>
             
             <div>
               <h4 className="text-lg font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-                <li><Link href="/terms" className="hover:text-white transition-colors">Terms</Link></li>
+                <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
+                <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
+                <li><Link to="/terms" className="hover:text-white transition-colors">Terms</Link></li>
               </ul>
             </div>
           </div>

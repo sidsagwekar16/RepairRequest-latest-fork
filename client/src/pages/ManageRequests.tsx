@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import RequestCard from "@/components/requests/RequestCard";
 
 export default function ManageRequests() {
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const { user, isLoading: isLoadingAuth } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [selectedOrganization, setSelectedOrganization] = useState<string>("");

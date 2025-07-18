@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -19,21 +19,21 @@ export default function RequestDetail({ id }: RequestDetailProps) {
   const [, navigate] = useLocation();
   const { user } = useAuth();
   const requestId = parseInt(id);
-  
+
   const { data: request, isLoading, error } = useQuery({
     queryKey: [`/api/requests/${requestId}`],
   });
-  
+
   const { data: timeline, isLoading: isLoadingTimeline } = useQuery({
     queryKey: [`/api/requests/${requestId}/timeline`],
   });
-  
+
   const { data: photos, isLoading: isLoadingPhotos } = useQuery({
     queryKey: [`/api/requests/${requestId}/photos`],
   });
-  
+
   const showAdminActions = user?.role === 'admin' || user?.role === 'maintenance';
-  
+
   if (isLoading) {
     return (
       <div className="py-6">
@@ -51,7 +51,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
       </div>
     );
   }
-  
+
   if (error || !request) {
     return (
       <div className="py-6">
@@ -74,7 +74,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
       </div>
     );
   }
-  
+
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
@@ -84,7 +84,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
           </Button>
           <h1 className="text-2xl font-heading font-bold text-gray-900">Request Details</h1>
         </div>
-        
+
         <Card>
           <CardHeader className="flex flex-row justify-between items-center pb-2">
             <div>
@@ -96,21 +96,21 @@ export default function RequestDetail({ id }: RequestDetailProps) {
               <PriorityBadge priority={request.priority || 'medium'} />
             </div>
           </CardHeader>
-          
+
           <CardContent>
             <dl>
               <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 -mx-6">
                 <dt className="text-sm font-medium text-gray-500">Facility</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{request.facility}</dd>
               </div>
-              
+
               <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 -mx-6">
                 <dt className="text-sm font-medium text-gray-500">Date</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                   {request.eventDate ? format(new Date(request.eventDate), 'MMMM d, yyyy') : 'Not specified'}
                 </dd>
               </div>
-              
+
               <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 -mx-6">
                 <dt className="text-sm font-medium text-gray-500">Time</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
@@ -136,14 +136,14 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                   </div>
                 </dd>
               </div>
-              
+
               <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 -mx-6">
                 <dt className="text-sm font-medium text-gray-500">Requestor</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                   {request.requestor?.name || 'Unknown'}
                 </dd>
               </div>
-              
+
               {/* For Facilities Requests - Show items */}
               {request.requestType === 'facilities' && (
                 <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 -mx-6">
@@ -160,7 +160,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           </div>
                         </li>
                       )}
-                      
+
                       {request.items?.chairsStage && (
                         <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
                           <div className="w-0 flex-1 flex items-center">
@@ -171,7 +171,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           </div>
                         </li>
                       )}
-                      
+
                       {request.items?.podium && (
                         <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
                           <div className="w-0 flex-1 flex items-center">
@@ -183,7 +183,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           </div>
                         </li>
                       )}
-                      
+
                       {request.items?.audioVisual && (
                         <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
                           <div className="w-0 flex-1 flex items-center">
@@ -194,7 +194,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           </div>
                         </li>
                       )}
-                      
+
                       {request.items?.avOther && (
                         <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
                           <div className="w-0 flex-1 flex items-center">
@@ -205,7 +205,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           </div>
                         </li>
                       )}
-                      
+
                       {request.items?.tables && (
                         <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
                           <div className="w-0 flex-1 flex items-center">
@@ -217,7 +217,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           </div>
                         </li>
                       )}
-                      
+
                       {request.items?.lighting && (
                         <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
                           <div className="w-0 flex-1 flex items-center">
@@ -228,7 +228,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           </div>
                         </li>
                       )}
-                      
+
                       {request.items?.food && (
                         <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
                           <div className="w-0 flex-1 flex items-center">
@@ -239,7 +239,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           </div>
                         </li>
                       )}
-                      
+
                       {request.items?.cleanup && (
                         <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
                           <div className="w-0 flex-1 flex items-center">
@@ -250,24 +250,24 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           </div>
                         </li>
                       )}
-                      
-                      {!request.items?.chairsAudience && 
-                      !request.items?.chairsStage && 
-                      !request.items?.podium && 
-                      !request.items?.audioVisual && 
-                      !request.items?.avOther && 
-                      !request.items?.tables && 
-                      !request.items?.lighting && 
-                      !request.items?.food && 
-                      !request.items?.cleanup && (
-                        <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                          <div className="w-0 flex-1 flex items-center">
-                            <span className="flex-1 w-0 truncate">
-                              No specific items requested
-                            </span>
-                          </div>
-                        </li>
-                      )}
+
+                      {!request.items?.chairsAudience &&
+                        !request.items?.chairsStage &&
+                        !request.items?.podium &&
+                        !request.items?.audioVisual &&
+                        !request.items?.avOther &&
+                        !request.items?.tables &&
+                        !request.items?.lighting &&
+                        !request.items?.food &&
+                        !request.items?.cleanup && (
+                          <li className="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
+                            <div className="w-0 flex-1 flex items-center">
+                              <span className="flex-1 w-0 truncate">
+                                No specific items requested
+                              </span>
+                            </div>
+                          </li>
+                        )}
                     </ul>
                   </dd>
                 </div>
@@ -293,7 +293,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                   </dd>
                 </div>
               )}
-              
+
               {request.items?.otherNeeds && (
                 <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 -mx-6">
                   <dt className="text-sm font-medium text-gray-500">Other Notes</dt>
@@ -302,7 +302,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                   </dd>
                 </div>
               )}
-              
+
               {request.assignee && (
                 <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 -mx-6">
                   <dt className="text-sm font-medium text-gray-500">Assigned To</dt>
@@ -321,7 +321,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
             </dl>
           </CardContent>
         </Card>
-        
+
         {/* Photos Section - Only visible for building requests */}
         {request?.requestType === 'building' && (
           <div className="mt-8">
@@ -335,14 +335,14 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                     {/* Photo Gallery Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                       {photos.map((photo: any) => (
-                        <div 
-                          key={photo.id} 
+                        <div
+                          key={photo.id}
                           className="group relative rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-200"
                         >
                           <div className="aspect-video w-full bg-gray-100">
-                            <img 
-                              src={photo.photoUrl ? `/${photo.photoUrl}` : (photo.filename ? `/uploads/photos/${photo.filename}` : '')} 
-                              alt={photo.originalFilename || "Maintenance request photo"} 
+                            <img
+                              src={photo.photoUrl ? `/${photo.photoUrl}` : (photo.filename ? `/uploads/photos/${photo.filename}` : '')}
+                              alt={photo.originalFilename || "Maintenance request photo"}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
@@ -368,21 +368,21 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                               {photo.originalFilename || "Maintenance photo"}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {photo.createdAt ? 
+                              {photo.createdAt ?
                                 (() => {
                                   try {
                                     return format(new Date(photo.createdAt), 'MMM d, yyyy')
                                   } catch (e) {
                                     return 'Date unavailable'
                                   }
-                                })() : 
+                                })() :
                                 'Date unavailable'
                               }
                             </p>
                           </div>
                           <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <a 
-                              href={photo.photoUrl ? `/${photo.photoUrl}` : (photo.filename ? `/uploads/photos/${photo.filename}` : '')} 
+                            <a
+                              href={photo.photoUrl ? `/${photo.photoUrl}` : (photo.filename ? `/uploads/photos/${photo.filename}` : '')}
                               download={photo.originalFilename}
                               className="bg-primary text-white p-2 rounded-full inline-flex"
                               title="Download photo"
@@ -393,7 +393,7 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                         </div>
                       ))}
                     </div>
-                    
+
                     {/* Photo List View */}
                     <h3 className="text-sm font-medium text-gray-700 mb-2">All Attached Files</h3>
                     <div className="border rounded-md divide-y">
@@ -405,20 +405,20 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                               {photo.originalFilename || photo.filename || "Photo"}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {photo.createdAt ? 
+                              {photo.createdAt ?
                                 (() => {
                                   try {
                                     return format(new Date(photo.createdAt), 'MMM d, yyyy')
                                   } catch (e) {
                                     return 'Date unavailable'
                                   }
-                                })() : 
+                                })() :
                                 'Date unavailable'
                               }
                             </p>
                           </div>
-                          <a 
-                            href={photo.photoUrl ? `/${photo.photoUrl}` : (photo.filename ? `/uploads/photos/${photo.filename}` : '')} 
+                          <a
+                            href={photo.photoUrl ? `/${photo.photoUrl}` : (photo.filename ? `/uploads/photos/${photo.filename}` : '')}
                             download={photo.originalFilename}
                             className="ml-auto"
                           >
@@ -437,19 +437,19 @@ export default function RequestDetail({ id }: RequestDetailProps) {
             </Card>
           </div>
         )}
-        
+
         {/* Status Timeline */}
         <div className="mt-8">
           <h2 className="text-lg font-heading font-medium text-gray-900 mb-4">Request Timeline</h2>
           <RequestTimeline timeline={timeline} isLoading={isLoadingTimeline} />
         </div>
-        
+
         {/* Communication Thread */}
         <div className="mt-8">
           <h2 className="text-lg font-heading font-medium text-gray-900 mb-4">Communication</h2>
           <MessageThread requestId={requestId} />
         </div>
-        
+
         {/* Admin Actions - Only visible to maintenance staff and admins */}
         {showAdminActions && (
           <div className="mt-8">

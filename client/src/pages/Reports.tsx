@@ -1,21 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell, 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
   LineChart,
   Line,
   AreaChart,
@@ -24,16 +24,16 @@ import {
 import { BadgeCheck, Clock, Gauge, HelpCircle, Calendar, LineChart as LineChartIcon, Building, Users } from "lucide-react";
 
 export default function Reports() {
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const { user, isLoading: isLoadingAuth } = useAuth();
   const [reportType, setReportType] = useState("dashboard");
-  
+
   // Redirect if not admin
   if (!isLoadingAuth && user && user.role !== 'admin') {
     navigate("/");
     return null;
   }
-  
+
   const { data: reportData, isLoading } = useQuery({
     queryKey: ["/api/reports", reportType],
     queryFn: async () => {
@@ -43,7 +43,7 @@ export default function Reports() {
       return res.json();
     },
   });
-  
+
   if (isLoadingAuth || isLoading) {
     return (
       <div className="py-6">
@@ -54,16 +54,16 @@ export default function Reports() {
       </div>
     );
   }
-  
+
   // Format data for different chart types
   const formatMonthlyData = () => {
     if (!reportData?.data || reportType !== 'monthly') return [];
-    
+
     const months = Array.from(new Set(reportData.data.map((item: any) => item.month))).sort();
-    
+
     return months.map(month => {
       const monthData = reportData.data.filter((item: any) => item.month === month);
-      
+
       return {
         month,
         pending: monthData.find((item: any) => item.status === 'pending')?.count || 0,
@@ -74,59 +74,59 @@ export default function Reports() {
       };
     });
   };
-  
+
   const formatFacilityData = () => {
     if (!reportData?.data || reportType !== 'facility') return [];
-    
+
     return reportData.data.map((item: any) => ({
       name: item.facility,
       value: item.count
     }));
   };
-  
+
   const formatStatusData = () => {
     if (!reportData?.data || reportType !== 'status') return [];
-    
+
     return reportData.data.map((item: any) => ({
-      name: item.status === 'in-progress' ? 'In Progress' : 
-            item.status.charAt(0).toUpperCase() + item.status.slice(1),
+      name: item.status === 'in-progress' ? 'In Progress' :
+        item.status.charAt(0).toUpperCase() + item.status.slice(1),
       value: item.count
     }));
   };
-  
+
   const formatCompletionData = () => {
     if (!reportData?.data || reportType !== 'completion') return [];
-    
+
     // Group by completion time (days)
     const grouped = reportData.data.reduce((acc: any, item: any) => {
       if (item.timeToComplete === null) return acc;
-      
-      const timeGroup = 
+
+      const timeGroup =
         item.timeToComplete <= 1 ? '0-1 days' :
-        item.timeToComplete <= 3 ? '1-3 days' :
-        item.timeToComplete <= 7 ? '3-7 days' :
-        '7+ days';
-      
+          item.timeToComplete <= 3 ? '1-3 days' :
+            item.timeToComplete <= 7 ? '3-7 days' :
+              '7+ days';
+
       if (!acc[timeGroup]) acc[timeGroup] = 0;
       acc[timeGroup]++;
       return acc;
     }, {});
-    
+
     return Object.entries(grouped).map(([name, value]) => ({ name, value }));
   };
-  
+
   const formatTypeData = () => {
     if (!reportData?.data || reportType !== 'requestType') return [];
-    
+
     return reportData.data.map((item: any) => ({
       name: item.requestType === 'facilities' ? 'Facilities' : 'Building',
       value: item.count
     }));
   };
-  
+
   const formatStaffData = () => {
     if (!reportData?.data || reportType !== 'staff') return [];
-    
+
     return reportData.data.map((item: any) => ({
       name: item.name || 'Unassigned',
       completed: item.completedCount || 0,
@@ -135,10 +135,10 @@ export default function Reports() {
       avgCompletionTime: item.avgCompletionTime || 0
     }));
   };
-  
+
   const formatPerformanceData = () => {
     if (!reportData?.data || reportType !== 'performance') return [];
-    
+
     const metrics = reportData.data.metrics || [];
     return metrics.map((item: any) => ({
       month: item.month,
@@ -147,7 +147,7 @@ export default function Reports() {
       requestsPerDay: item.requestsPerDay || 0
     }));
   };
-  
+
   // Format dashboard overview data
   const formatDashboardData = () => {
     if (!reportData?.data || reportType !== 'dashboard') return {
@@ -157,7 +157,7 @@ export default function Reports() {
       requestsByStatus: [],
       topFacilities: []
     };
-    
+
     return {
       kpis: reportData.data.kpis || [],
       requestsByMonth: reportData.data.requestsByMonth || [],
@@ -166,7 +166,7 @@ export default function Reports() {
       topFacilities: reportData.data.topFacilities || []
     };
   };
-  
+
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
   const STATUS_COLORS = {
@@ -176,14 +176,14 @@ export default function Reports() {
     completed: '#00C49F',
     cancelled: '#FF8042'
   };
-  
+
   const dashboardData = formatDashboardData();
 
   return (
     <div className="py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
         <h1 className="text-2xl font-heading font-bold text-gray-900 mb-6">Maintenance Analytics Dashboard</h1>
-        
+
         <Tabs defaultValue="dashboard" value={reportType} onValueChange={setReportType}>
           <TabsList className="mb-4">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
@@ -195,7 +195,7 @@ export default function Reports() {
             <TabsTrigger value="staff">Staff Performance</TabsTrigger>
             <TabsTrigger value="performance">Performance Metrics</TabsTrigger>
           </TabsList>
-          
+
           {/* Dashboard Overview */}
           <TabsContent value="dashboard">
             {/* KPI Cards */}
@@ -262,9 +262,9 @@ export default function Reports() {
                           label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                         >
                           {dashboardData.requestsByStatus.map((entry: any, index: number) => (
-                            <Cell 
-                              key={`cell-${index}`} 
-                              fill={COLORS[index % COLORS.length]} 
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
                             />
                           ))}
                         </Pie>
@@ -328,7 +328,7 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="monthly">
             <Card>
               <CardHeader>
@@ -355,7 +355,7 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="facility">
             <Card>
               <CardHeader>
@@ -387,7 +387,7 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="status">
             <Card>
               <CardHeader>
@@ -419,7 +419,7 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="completion">
             <Card>
               <CardHeader>
@@ -442,7 +442,7 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="requestType">
             <Card>
               <CardHeader>
@@ -474,7 +474,7 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="staff">
             <Card>
               <CardHeader>
@@ -497,7 +497,7 @@ export default function Reports() {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle>Average Completion Time by Staff</CardTitle>
@@ -519,7 +519,7 @@ export default function Reports() {
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="performance">
             <Card>
               <CardHeader>

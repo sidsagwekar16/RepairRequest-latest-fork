@@ -32,14 +32,14 @@ import { Helmet } from "react-helmet-async";
 import ScrollToTop from "@/components/ScrollToTop";
 import SignupPage from "./pages/SignupPage";
 import LoginPage from "./pages/LoginPage";
-import { BrowserRouter, Route, Routes, useParams } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes, useParams } from "react-router-dom";
 
 function RequestDetailWrapper() {
   const { id } = useParams();
   return <RequestDetail id={id!} />;
 }
 
-function ProtectedLayout({ children }: { children: React.ReactNode }) {
+function ProtectedLayout() {
   const { user } = useAuth();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
@@ -57,7 +57,7 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
           user={user}
         />
         <main className="flex-1 relative z-0 overflow-y-auto bg-gray-100">
-          {children}
+          <Outlet />
         </main>
       </div>
       <MobileNav user={user} />
@@ -92,10 +92,10 @@ function AppContent() {
         <title>{organizationName} - Facilities Management System</title>
         <meta name="description" content={`${organizationName}'s comprehensive facilities management system for repair requests and facility scheduling.`} />
       </Helmet>
-      
+
       <Routes>
-        {/* Public routes */}
-        <Route path="/landing" element={<LandingPage />} />
+        {/* Public routes - always available */}
+        <Route path="/" element={<LandingPage />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/support" element={<Support />} />
@@ -107,86 +107,25 @@ function AppContent() {
         <Route path="/signup" element={<SignupPage />} />
 
         {/* Protected routes */}
-        {isAuthenticated ? (
-          <>
-            <Route path="/dashboard" element={
-              <ProtectedLayout>
-                <Dashboard />
-              </ProtectedLayout>
-            } />
-            <Route path="/new-facilities-request" element={
-              <ProtectedLayout>
-                <RequestForm />
-              </ProtectedLayout>
-            } />
-            <Route path="/new-building-request" element={
-              <ProtectedLayout>
-                <BuildingRequestForm />
-              </ProtectedLayout>
-            } />
-            <Route path="/requests/:id" element={
-              <ProtectedLayout>
-                <RequestDetailWrapper />
-              </ProtectedLayout>
-            } />
-            <Route path="/my-requests" element={
-              <ProtectedLayout>
-                <MyRequests />
-              </ProtectedLayout>
-            } />
-            <Route path="/assigned-requests" element={
-              <ProtectedLayout>
-                <AssignedRequests />
-              </ProtectedLayout>
-            } />
-            <Route path="/manage-requests" element={
-              <ProtectedLayout>
-                <ManageRequests />
-              </ProtectedLayout>
-            } />
-            <Route path="/reports" element={
-              <ProtectedLayout>
-                <Reports />
-              </ProtectedLayout>
-            } />
-            <Route path="/room-history" element={
-              <ProtectedLayout>
-                <RoomHistory />
-              </ProtectedLayout>
-            } />
-            <Route path="/admin/organizations" element={
-              <ProtectedLayout>
-                <AdminOrganizations />
-              </ProtectedLayout>
-            } />
-            <Route path="/admin/buildings-facilities" element={
-              <ProtectedLayout>
-                <AdminBuildingsFacilities />
-              </ProtectedLayout>
-            } />
-            <Route path="/admin/users" element={
-              <ProtectedLayout>
-                <AdminUsers />
-              </ProtectedLayout>
-            } />
-            <Route path="/" element={
-              <ProtectedLayout>
-                <Dashboard />
-              </ProtectedLayout>
-            } />
-            <Route path="*" element={
-              <ProtectedLayout>
-                <NotFound />
-              </ProtectedLayout>
-            } />
-          </>
-        ) : (
-          <>
-            <Route path="/" element={<LandingPage />} />
-           
-            <Route path="*" element={<LandingPage />} />
-          </>
+        {isAuthenticated && (
+          <Route element={<ProtectedLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/new-facilities-request" element={<RequestForm />} />
+          <Route path="/new-building-request" element={<BuildingRequestForm />} />
+          <Route path="/requests/:id" element={<RequestDetailWrapper />} />
+          <Route path="/my-requests" element={<MyRequests />} />
+          <Route path="/assigned-requests" element={<AssignedRequests />} />
+          <Route path="/manage-requests" element={<ManageRequests />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/room-history" element={<RoomHistory />} />
+          <Route path="/admin/organizations" element={<AdminOrganizations />} />
+          <Route path="/admin/buildings-facilities" element={<AdminBuildingsFacilities />} />
+          <Route path="/admin/users" element={<AdminUsers />} />
+        </Route>
         )}
+
+        {/* Fallback for unknown routes */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   );

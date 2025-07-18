@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import RequestCard from "@/components/requests/RequestCard";
 
 export default function AssignedRequests() {
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const { user, isLoading: isLoadingAuth } = useAuth();
   
   // Redirect if not admin or maintenance
@@ -43,7 +43,7 @@ export default function AssignedRequests() {
             </div>
           ) : requests?.length > 0 ? (
             <ul className="divide-y divide-gray-200">
-              {requests.map((request) => (
+              {requests.map((request:any) => (
                 <RequestCard 
                   key={request.id} 
                   request={request} 

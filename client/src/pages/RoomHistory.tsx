@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import RequestCard from "@/components/requests/RequestCard";
 import { format } from "date-fns";
 
 export default function RoomHistory() {
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [selectedBuilding, setSelectedBuilding] = useState<string>("");
   const [selectedRoom, setSelectedRoom] = useState<string>("");

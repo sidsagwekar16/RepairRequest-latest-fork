@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import StatusBadge from "@/components/status/StatusBadge";
 import PriorityBadge from "@/components/priority/PriorityBadge";
 import { format } from "date-fns";
@@ -23,7 +23,7 @@ export default function RequestCard({ request, showRequestor = false }: RequestC
 
   return (
     <li className="request-card">
-      <Link href={`/requests/${request.id}`}>
+      <Link to={`/requests/${request.id}`}>
         <a className="block hover:bg-gray-50">
           <div className="px-4 py-4 sm:px-6">
             <div className="flex items-center justify-between">

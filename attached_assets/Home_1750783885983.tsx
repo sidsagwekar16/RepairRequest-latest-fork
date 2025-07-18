@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Users, Clock, Shield, Mail, Building2, Wrench, BarChart3 } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import logoPath from "@assets/RepairRequest Logo Transparent_1750465933265.png";
 
 export default function Home() {
@@ -19,7 +19,7 @@ export default function Home() {
                 <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
               </div>
             </div>
-            <Link href="/login">
+            <Link to="/login">
               <Button variant="outline">
                 Login to Portal
               </Button>
@@ -42,7 +42,7 @@ export default function Home() {
             RepairRequest is the comprehensive maintenance management platform for property managers, facility teams, and organizations. From schools to commercial real estate, track and resolve facility issues with ease.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/portal">
+            <Link to="/signup">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
                 Get Started Today
               </Button>
@@ -209,7 +209,7 @@ export default function Home() {
               <p className="text-lg text-gray-600 mb-8">
                 RepairRequest understands the unique challenges of maintaining facilities across different industries. Our platform adapts to your specific needs while ensuring efficient operations.
               </p>
-              
+
               <div className="space-y-4">
                 {[
                   "Reduce response times for critical repairs",
@@ -225,13 +225,13 @@ export default function Home() {
                 ))}
               </div>
             </div>
-            
+
             <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl shadow-xl p-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Ready to Get Started?</h3>
               <p className="text-gray-600 mb-6">
                 Join organizations across industries already using RepairRequest to streamline their maintenance operations.
               </p>
-              <Link href="/portal">
+              <Link to="/signup">
                 <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700">
                   Access Your Portal
                 </Button>
@@ -260,17 +260,17 @@ export default function Home() {
                 Streamlining maintenance management for property managers and organizations across all industries.
               </p>
             </div>
-            
+
             <div>
               <h4 className="text-lg font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/portal" className="hover:text-white transition-colors">Portal Login</Link></li>
+                <li><Link to="/login" className="hover:text-white transition-colors">Portal Login</Link></li>
                 <li><span className="cursor-not-allowed">Features</span></li>
                 <li><span className="cursor-not-allowed">Pricing</span></li>
                 <li><span className="cursor-not-allowed">Support</span></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="text-lg font-semibold mb-4">Contact</h4>
               <div className="space-y-2 text-gray-400">
@@ -279,7 +279,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
             <p>&copy; 2025 SchoolHouse Logistics. All rights reserved.</p>
           </div>

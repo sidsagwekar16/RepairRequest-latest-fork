@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Users, Clock, Shield, Mail, Building2, Settings, BarChart3 } from "lucide-react";
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import logoPath from "@assets/RepairRequest Logo Transparent_1750783382845.png";
 
 export default function HeroLanding() {
@@ -19,7 +19,7 @@ export default function HeroLanding() {
                 <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
               </div>
             </div>
-            <Link href="/login">
+            <Link to="/login">
               <Button variant="outline">
                 Login to Portal
               </Button>
@@ -42,14 +42,16 @@ export default function HeroLanding() {
             RepairRequest is the comprehensive maintenance management platform for property managers, facility teams, and organizations. From schools to commercial real estate, track and resolve facility issues with ease.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/">
+            <Link to="/signup">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
                 Get Started Today
               </Button>
             </Link>
-            <Button size="lg" variant="outline">
-              Schedule Demo
-            </Button>
+            <Link to="https://calendly.com/schoolhouselogistics">
+              <Button size="lg" variant="outline">
+                Schedule Demo
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -209,7 +211,7 @@ export default function HeroLanding() {
               <p className="text-lg text-gray-600 mb-8">
                 RepairRequest understands the unique challenges of maintaining facilities across different industries. Our platform adapts to your specific needs while ensuring efficient operations.
               </p>
-              
+
               <div className="space-y-4">
                 {[
                   "Reduce response times for critical repairs",
@@ -225,13 +227,13 @@ export default function HeroLanding() {
                 ))}
               </div>
             </div>
-            
+
             <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl shadow-xl p-8">
               <h3 className="text-2xl font-bold text-gray-900 mb-6">Ready to Get Started?</h3>
               <p className="text-gray-600 mb-6">
                 Join organizations across industries already using RepairRequest to streamline their maintenance operations.
               </p>
-              <Link href="/">
+              <Link to="/signup">
                 <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700">
                   Access Your Portal
                 </Button>
@@ -260,27 +262,27 @@ export default function HeroLanding() {
                 Streamlining maintenance management for property managers and organizations across all industries.
               </p>
             </div>
-            
+
             <div>
               <h4 className="text-lg font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/" className="hover:text-white transition-colors">Portal Login</Link></li>
-                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
-                <li><Link href="/support" className="hover:text-white transition-colors">Support</Link></li>
+                <li><Link to="/login" className="hover:text-white transition-colors">Portal Login</Link></li>
+                <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link to="/support" className="hover:text-white transition-colors">Support</Link></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="text-lg font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link href="/about" className="hover:text-white transition-colors">About</Link></li>
-                <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-                <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-                <li><Link href="/terms" className="hover:text-white transition-colors">Terms</Link></li>
+                <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
+                <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
+                <li><Link to="/terms" className="hover:text-white transition-colors">Terms</Link></li>
               </ul>
             </div>
           </div>
-          
+
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
             <p>&copy; 2024 RepairRequest by SchoolHouse Logistics. All rights reserved.</p>
           </div>
