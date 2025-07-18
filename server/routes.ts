@@ -8,6 +8,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import z from "zod"
+import AWS from 'aws-sdk';
 
 // Extend session interface to include user property
 declare module "express-session" {
@@ -22,11 +23,11 @@ declare module "express-session" {
     };
   }
 }
-import { 
-  insertRequestSchema, 
+import {
+  insertRequestSchema,
   insertRequestItemsSchema,
   insertBuildingRequestSchema,
-  insertMessageSchema, 
+  insertMessageSchema,
   insertAssignmentSchema,
   insertStatusUpdateSchema,
   insertRequestPhotoSchema,
@@ -79,6 +80,8 @@ const bulkSchema = z.array(
   })
 );
 
+const s3 = new AWS.S3();
+
 export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/users/bulk", isAuthenticated, async (req: any, res) => {
@@ -88,48 +91,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Session exists:", !!req.session);
       console.log("Session user:", req.session?.user);
       console.log("req.user:", req.user);
-      
+
       // Extract user ID from session authentication
       const currentUserId = req.user?.id || req.user?.claims?.sub;
       console.log("Current user ID from session:", currentUserId);
       console.log("Full user object:", req.user);
-      
+
       if (!currentUserId) {
         return res.status(401).json({ message: "User ID not found in session" });
       }
-      
+
       const currentUser = await dbStorage.getUser(currentUserId);
       console.log("Current user from database:", currentUser);
-      
+
       if (!currentUser) {
         return res.status(404).json({ message: "User not found in database" });
       }
-      
+
       if (currentUser.role !== "super_admin") {
         return res.status(403).json({ message: "Super admin access required" });
       }
-  
+
       console.log("=== BULK IMPORT DEBUG ===");
       console.log("Request body:", req.body);
       console.log("Users array:", req.body.users);
       console.log("Users array type:", typeof req.body.users);
       console.log("Users array length:", req.body.users?.length);
-      
+
       if (!req.body.users) {
         console.error("No users array in request body");
         return res.status(400).json({ message: "No users array provided" });
       }
-      
+
       const result = bulkSchema.safeParse(req.body.users);
       console.log("Validation result:", result);
       if (!result.success) {
         console.error("Bulk import validation failed:", result.error.flatten().fieldErrors);
         return res.status(400).json({ message: result.error.flatten().fieldErrors });
       }
-  
+
       let created = 0;
       let failed = 0;
-  
+
       for (const u of result.data) {
         try {
           // skip duplicates
@@ -140,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Generate a random password for the user
           const tempPassword = crypto.randomBytes(8).toString('hex');
           const hashedPassword = await bcrypt.hash(tempPassword, 10);
-          
+
           await dbStorage.upsertUser({
             id: crypto.randomUUID(),
             email: u.email,
@@ -153,7 +156,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             createdAt: new Date(),
             updatedAt: new Date(),
           });
-          
+
           console.log(`Created user ${u.email} with temporary password: ${tempPassword}`);
           created++;
         } catch (e) {
@@ -161,8 +164,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           failed++;
         }
       }
-      res.json({ 
-        created, 
+      res.json({
+        created,
         failed,
         message: `Successfully imported ${created} users. ${failed} users were skipped (likely duplicates). Temporary passwords have been generated for new users.`
       });
@@ -182,28 +185,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // PRIORITY OAUTH ROUTES: Register before all other middleware
   const passport = await import('passport')
-  
+
   // OAuth callback handler that bypasses middleware conflicts
   // app.get("/api/auth/callback/google", async (req, res) => {
   //   console.log("=== PRIORITY OAUTH CALLBACK HANDLER ===");
   //   console.log("Query params:", req.query);
   //   console.log("Session ID:", req.sessionID);
-    
+
   //   try {
   //     // Check for OAuth errors from Google
   //     if (req.query.error) {
   //       console.error("Google OAuth error:", req.query.error);
   //       return res.redirect("/?error=oauth_error");
   //     }
-      
+
   //     // Check for authorization code
   //     if (!req.query.code) {
   //       console.error("No authorization code received");
   //       return res.redirect("/?error=no_code");
   //     }
-      
+
   //     console.log("Processing OAuth callback with code:", (req.query.code as string).substring(0, 10) + "...");
-      
+
   //     // Exchange authorization code for access token
   //     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
   //       method: 'POST',
@@ -218,37 +221,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //         grant_type: 'authorization_code',
   //       }),
   //     });
-      
+
   //     const tokenData = await tokenResponse.json();
   //     console.log("Token exchange result:", tokenData.access_token ? "SUCCESS" : "FAILED");
-      
+
   //     if (!tokenData.access_token) {
   //       console.error("Failed to get access token:", tokenData);
   //       return res.redirect("/?error=token_failed");
   //     }
-      
+
   //     // Get user profile from Google
   //     const profileResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
   //       headers: {
   //         'Authorization': `Bearer ${tokenData.access_token}`,
   //       },
   //     });
-      
+
   //     const profile = await profileResponse.json();
   //     console.log("User profile received:", { id: profile.id, email: profile.email, name: profile.name });
-      
+
   //     if (!profile.email) {
   //       console.error("No email in profile");
   //       return res.redirect("/?error=no_email");
   //     }
-      
+
   //     // Check if user is allowed
   //     const allowedEmails = ['jeffemail111@gmail.com', 'admin@example.com', 'maintenance@example.com'];
   //     if (!allowedEmails.includes(profile.email)) {
   //       console.log("Email not in allowed list:", profile.email);
   //       return res.redirect("/?error=not_authorized");
   //     }
-      
+
   //     // Find or create user
   //     let user = await dbStorage.getUserByEmail(profile.email);
   //     if (!user) {
@@ -265,56 +268,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   //     } else {
   //       console.log("Found existing user:", user);
   //     }
-      
+
   //     // Log in the user
   //     req.logIn(user, (err) => {
   //       if (err) {
   //         console.error("Login failed:", err);
   //         return res.redirect("/?error=login_failed");
   //       }
-        
+
   //       console.log("User successfully logged in:", user.email);
   //       console.log("Session after login:", req.sessionID);
-        
+
   //       // Redirect to dashboard
   //       return res.redirect("/dashboard");
   //     });
-      
+
   //   } catch (error) {
   //     console.error("OAuth callback error:", error);
   //     return res.redirect("/?error=callback_failed");
   //   }
   // });
-  
+
   // Login route with priority registration
   // app.get("/api/login", (req, res) => {
   //   console.log("=== PRIORITY LOGIN HANDLER ===");
   //   console.log("Redirecting to Google OAuth");
-    
+
   //   const clientId = process.env.GOOGLE_CLIENT_ID;
   //   const redirectUri = `https://${process.env.REPLIT_DOMAINS?.split(',')[0]}/api/auth/callback/google`;
   //   const scope = "profile email";
   //   const state = req.sessionID;
-    
+
   //   const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
   //     `response_type=code&` +
   //     `client_id=${clientId}&` +
   //     `redirect_uri=${encodeURIComponent(redirectUri)}&` +
   //     `scope=${encodeURIComponent(scope)}&` +
   //     `state=${state}`;
-    
+
   //   console.log("Google OAuth URL:", googleAuthUrl.substring(0, 100) + "...");
   //   res.redirect(googleAuthUrl);
   // });
 
   // PRIORITY ROUTES: Register before Vite middleware to avoid conflicts
-  
+
   // Test email endpoint for debugging
   app.post("/api/test-email", async (req, res) => {
     console.log("=== EMAIL TEST ENDPOINT ===");
     try {
       const { sendRequestNotificationEmails } = await import("./emailService.js");
-      
+
       const testData = {
         requestId: 999,
         requestType: 'facility' as const,
@@ -327,63 +330,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
         organizationName: 'Canterbury School',
         createdAt: new Date()
       };
-      
+
       const testAdminEmails = ['jeffacarstens@gmail.com'];
-      
+
       await sendRequestNotificationEmails(testData, testAdminEmails);
-      
+
       res.json({ message: 'Test email sent successfully' });
     } catch (error) {
       console.error('Test email failed:', error);
       res.status(500).json({ message: 'Test email failed', error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
-  
+
   // Priority facilities request creation route (FACILITIES ONLY - building requests go to /api/building-requests)
   app.post("/api/requests", async (req, res) => {
     console.log("=== FACILITIES REQUEST HANDLER (NOT BUILDING) ===");
     console.log("Request body:", req.body);
     console.log("Is authenticated:", req.isAuthenticated?.());
     console.log("User:", req.user);
-    
+
     try {
       // Check authentication
       if (!req.isAuthenticated?.() || !req.user) {
         console.log("Authentication failed");
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const user = req.user as AuthenticatedUser;
       const userId = user?.id;
-      
-      console.log("User authenticated:", { 
-        userId, 
-        userRole: user.role, 
+
+      console.log("User authenticated:", {
+        userId,
+        userRole: user.role,
         userOrg: user.organizationId,
-        userEmail: user.email 
+        userEmail: user.email
       });
       console.log("Request body received:", JSON.stringify(req.body, null, 2));
-      
+
       // REDIRECT BUILDING REQUESTS TO PROPER ENDPOINT
       if (req.body.requestType === "building" || req.body["building.description"]) {
         console.log("🔄 BUILDING REQUEST DETECTED - REDIRECTING TO /api/building-requests");
-        return res.status(400).json({ 
+        return res.status(400).json({
           message: "Building requests must use /api/building-requests endpoint",
           redirect: "/api/building-requests"
         });
       }
-      
+
       // Check required fields before validation
       const requiredFields = ['facility', 'event', 'eventDate'];
       const missingFields = requiredFields.filter(field => !req.body[field]);
       if (missingFields.length > 0) {
         console.log("Missing required fields:", missingFields);
-        return res.status(400).json({ 
-          message: "Missing required fields", 
-          missingFields 
+        return res.status(400).json({
+          message: "Missing required fields",
+          missingFields
         });
       }
-      
+
       // Prepare data for validation (FACILITIES REQUESTS ONLY)
       const dataForValidation = {
         organizationId: user.organizationId,
@@ -397,9 +400,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         endTime: req.body.endTime || null,
         requestorId: userId
       };
-      
+
       console.log("Data prepared for validation:", JSON.stringify(dataForValidation, null, 2));
-      
+
       // Validate request data
       console.log("Starting schema validation...");
       let requestData;
@@ -408,12 +411,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Schema validation successful:", JSON.stringify(requestData, null, 2));
       } catch (validationError) {
         console.error("Schema validation failed:", validationError);
-        return res.status(400).json({ 
-          message: "Validation error", 
-          error: validationError.message || validationError 
+        return res.status(400).json({
+          message: "Validation error",
+          error: validationError.message || validationError
         });
       }
-      
+
       // Create the basic request first
       console.log("Creating request in database...");
       let createdRequest;
@@ -422,17 +425,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("Request created successfully:", createdRequest);
       } catch (dbError) {
         console.error("Database creation error:", dbError);
-        return res.status(500).json({ 
-          message: "Database error during request creation", 
-          error: dbError.message || dbError 
+        return res.status(500).json({
+          message: "Database error during request creation",
+          error: dbError.message || dbError
         });
       }
-      
+
       // Store selected items and notes as part of the status update
-      const itemsNote = req.body.selectedItems?.length > 0 || req.body.otherNeeds 
+      const itemsNote = req.body.selectedItems?.length > 0 || req.body.otherNeeds
         ? `Selected items: ${(req.body.selectedItems || []).join(', ')}. Additional notes: ${req.body.otherNeeds || 'None'}`
         : "Labor request submitted";
-      
+
       // Create initial status update
       console.log("Creating initial status update...");
       try {
@@ -447,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Status update creation error:", statusError);
         // Don't fail the whole request for status update error
       }
-      
+
       // Send email notifications
       console.log("Sending email notifications...");
       try {
@@ -458,7 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const adminEmails = user.organizationId !== undefined
           ? await dbStorage.getOrganizationAdminEmails(user.organizationId)
           : [];
-        
+
         if (organization && adminEmails.length > 0) {
           await sendRequestNotificationEmails({
             requestId: createdRequest.id,
@@ -480,7 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Email notification error:", emailError);
         // Don't fail the request if email fails
       }
-      
+
       console.log("=== PRIORITY REQUEST SUBMISSION COMPLETED SUCCESSFULLY ===");
       res.status(201).json(createdRequest);
     } catch (error) {
@@ -489,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error message:", error?.message);
       console.error("Error stack:", error?.stack);
       console.error("Full error object:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to create labor request",
         error: error?.message || "Unknown error"
       });
@@ -502,23 +505,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("Is authenticated:", req.isAuthenticated?.());
     console.log("User:", req.user);
     console.log("Session at /api/facilities:", req.session);
-    
+
     try {
       // Check authentication
       if (!req.isAuthenticated?.() || !req.user) {
         console.log("Authentication failed");
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const user = req.user as AuthenticatedUser;
       const userId = user?.id;
-      
-      console.log("User authenticated:", { 
-        userId, 
-        userRole: user.role, 
+
+      console.log("User authenticated:", {
+        userId,
+        userRole: user.role,
         userOrg: user.organizationId
       });
-      
+
       const facilities = await dbStorage.getFacilitiesByOrganization(user.organizationId);
       console.log("Facilities found:", facilities);
       res.json(facilities);
@@ -535,29 +538,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("Request body:", req.body);
     console.log("Is authenticated:", req.isAuthenticated?.());
     console.log("User:", req.user);
-    
+
     try {
       // Check authentication
       if (!req.isAuthenticated?.() || !req.user) {
         console.log("Authentication failed");
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const userId = req.user.id;
       const user = req.user;
       const requestId = parseInt(req.params.id);
-      
+
       console.log("Processing status update for user:", { id: userId, role: user.role });
-      
+
       // Check permissions
-      const canUpdateStatus = user.role === 'admin' || user.role === 'maintenance' || 
-                             (req.body.status === 'cancelled' && await dbStorage.isRequestor(userId, requestId));
-      
+      const canUpdateStatus = user.role === 'admin' || user.role === 'maintenance' ||
+        (req.body.status === 'cancelled' && await dbStorage.isRequestor(userId, requestId));
+
       if (!canUpdateStatus) {
         console.log("Permission denied");
         return res.status(403).json({ message: "Unauthorized" });
       }
-      
+
       // Create status update
       const statusUpdateData = {
         requestId,
@@ -565,24 +568,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updatedById: userId,
         note: req.body.note || ""
       };
-      
+
       console.log("Updating status with data:", statusUpdateData);
-      
+
       // Update request status
       await dbStorage.updateRequestStatus(statusUpdateData);
-      
+
       // Update priority if provided
       if (req.body.priority) {
         console.log("Updating priority to:", req.body.priority);
         await dbStorage.updateRequestPriority(requestId, req.body.priority);
       }
-      
+
       console.log("Status update successful");
       res.json({ success: true });
-      
+
     } catch (error) {
       console.error("Status update error:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to update request status",
         error: error instanceof Error ? error.message : "Unknown error"
       });
@@ -592,15 +595,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // PRIORITY DASHBOARD ROUTES: Register before Vite middleware
   app.get("/api/dashboard/stats", async (req, res) => {
     console.log("=== PRIORITY DASHBOARD STATS ===");
-    
+
     try {
       if (!req.isAuthenticated?.() || !req.user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       const user = req.user;
       const userId = user.id;
-      
+
       let stats;
       if (user.role === 'super_admin') {
         stats = await dbStorage.getAdminDashboardStats();
@@ -609,7 +612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         stats = await dbStorage.getUserDashboardStats(userId);
       }
-      
+
       res.json(stats);
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
@@ -620,15 +623,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/requests/recent", async (req, res) => {
     console.log("=== PRIORITY RECENT REQUESTS ===");
     console.log("User:", req.user?.role, req.user?.organizationId);
-    
+
     try {
       if (!req.isAuthenticated?.() || !req.user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       const user = req.user;
       const userId = user.id;
-      
+
       let requests;
       if (user.role === 'super_admin') {
         requests = await dbStorage.getRecentRequests(10);
@@ -637,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         requests = await dbStorage.getUserRequests(userId, 10);
       }
-      
+
       console.log("Recent requests found:", requests.length);
       res.json(requests);
     } catch (error) {
@@ -695,11 +698,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       // Ensure roomNumbers is always an array
       let roomNumbers = [];
       if (Array.isArray(req.body.roomNumbers)) {
@@ -715,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         room_numbers: roomNumbers, // Always an array
         isActive: true,
       };
-      
+
       const building = await dbStorage.createBuilding(buildingData);
       // Map DB result to ensure roomNumbers is always an array
       const result = {
@@ -734,11 +737,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const buildingId = parseInt(req.params.id);
       // Ensure roomNumbers is always an array
       let updateRoomNumbers = [];
@@ -753,7 +756,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         description: req.body.description,
         room_numbers: updateRoomNumbers, // Always an array
       };
-      
+
       const building = await dbStorage.updateBuilding(buildingId, updates);
       // Map DB result to ensure roomNumbers is always an array
       const result = {
@@ -772,11 +775,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const buildingId = parseInt(req.params.id);
       await dbStorage.deleteBuilding(buildingId);
       res.json({ success: true });
@@ -791,11 +794,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const facilityData = req.body;
       const facility = await dbStorage.createFacility(facilityData);
       res.json(facility);
@@ -810,11 +813,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const facilityId = parseInt(req.params.id);
       const updates = req.body;
       const facility = await dbStorage.updateFacility(facilityId, updates);
@@ -830,11 +833,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const facilityId = parseInt(req.params.id);
       await dbStorage.deleteFacility(facilityId);
       res.json({ success: true });
@@ -849,7 +852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Creating organization:", req.body);
       const { name, slug, domain, logoUrl } = req.body;
-      
+
       // Validate required fields
       if (!name || !slug) {
         return res.status(400).json({ error: "Name and slug are required" });
@@ -876,7 +879,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { id } = req.params;
       const { name, domain, logoUrl } = req.body;
-      
+
       console.log("Updating organization:", id, req.body);
       const organization = await dbStorage.updateOrganization(parseInt(id), {
         name,
@@ -893,26 +896,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Set up multer storage configuration
   const uploadDir = path.resolve(process.cwd(), 'uploads/photos');
-  
+
   // Ensure directory exists
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
-  
+
   console.log(`Upload directory resolved to: ${uploadDir}`);
-  
+
   // Import path module for file path manipulation
   const express = await import('express');
-  
+
   // Note: Uploads directory is already served statically in server/index.ts
-  
+
   const multerStorage = multer.diskStorage({
     destination: (req, file, cb) => {
       console.log(`=== MULTER DESTINATION ===`);
       console.log(`Upload directory: ${uploadDir}`);
       console.log(`Directory exists: ${fs.existsSync(uploadDir)}`);
       console.log(`Current working directory: ${process.cwd()}`);
-      
+
       // Ensure the directory exists before writing
       try {
         if (!fs.existsSync(uploadDir)) {
@@ -930,32 +933,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
       const ext = path.extname(file.originalname);
       const filename = `photo-${uniqueSuffix}${ext}`;
-      
+
       console.log(`=== MULTER FILENAME ===`);
       console.log(`Original name: ${file.originalname}`);
       console.log(`Generated filename: ${filename}`);
       console.log(`Extension: ${ext}`);
       console.log(`MIME type: ${file.mimetype}`);
-      
+
       cb(null, filename);
     }
   });
-  
+
   // File filter to accept only images
   const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     const filetypes = /jpeg|jpg|png|gif/;
     const mimetype = filetypes.test(file.mimetype);
     const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    
+
     if (mimetype && extname) {
       return cb(null, true);
     }
     cb(null, false);
   };
-  
+
   // Configure multer upload with error handling
-  const upload = multer({ 
-    storage: multerStorage, 
+  const upload = multer({
+    storage: multerStorage,
     fileFilter,
     limits: {
       fileSize: 5 * 1024 * 1024 // 5MB size limit
@@ -972,22 +975,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log("=== TEST UPLOAD STARTED ===");
     console.log("Request content-type:", req.headers['content-type']);
     console.log("Request body keys:", Object.keys(req.body));
-    
+
     upload.single('test')(req, res, (err) => {
       console.log("=== TEST UPLOAD MULTER CALLBACK ===");
       console.log("Multer error:", err);
       console.log("File after multer:", req.file);
-      
+
       if (err) {
         console.error("MULTER ERROR:", err);
         return res.status(400).json({ error: err.message });
       }
-      
+
       try {
         console.log("=== TEST UPLOAD DEBUG ===");
         console.log("File received:", req.file);
         console.log("Body received:", req.body);
-        
+
         if (req.file) {
           console.log("File details:", {
             originalname: req.file.originalname,
@@ -995,13 +998,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             path: req.file.path,
             size: req.file.size
           });
-          
+
           const exists = fs.existsSync(req.file.path);
           console.log(`File exists at ${req.file.path}: ${exists}`);
         }
-        
-        res.json({ 
-          success: true, 
+
+        res.json({
+          success: true,
           file: req.file,
           uploadDir: uploadDir,
           cwd: process.cwd()
@@ -1016,13 +1019,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Allow all emails - Google OAuth will manage user access
-function isAllowedEmail(email: string): boolean {
-  return true;
-}
+  function isAllowedEmail(email: string): boolean {
+    return true;
+  }
 
   // The development login endpoint has been removed
   // Users will now be authenticated exclusively through Google login via Replit Auth
-  
+
 
 
 
@@ -1034,11 +1037,11 @@ function isAllowedEmail(email: string): boolean {
       console.log("Session ID:", req.sessionID);
       console.log("Session exists:", !!req.session);
       console.log("Session user:", req.session?.user);
-      
+
       if (!req.session.user) {
         return res.status(401).json({ message: "Not authenticated" });
       }
-      
+
       const user = req.session.user;
       return res.json(user);
     } catch (error) {
@@ -1054,7 +1057,7 @@ function isAllowedEmail(email: string): boolean {
     if (!req.session.user || !req.user) {
       return { userId: undefined, user: undefined };
     }
-    
+
     return { userId: req.user.id, user: req.user };
   };
 
@@ -1064,7 +1067,7 @@ function isAllowedEmail(email: string): boolean {
     if (req.session.user && req.user) {
       return next();
     }
-    
+
     // No auth found
     return res.status(401).json({ message: "Unauthorized" });
   };
@@ -1074,11 +1077,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const user = req.user;
       const userId = user?.id;
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       let stats;
       if (user?.role === 'super_admin') {
         // Super admins see all data
@@ -1089,24 +1092,24 @@ function isAllowedEmail(email: string): boolean {
       } else {
         stats = await dbStorage.getUserDashboardStats(userId);
       }
-      
+
       res.json(stats);
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
       res.status(500).json({ message: "Failed to fetch dashboard stats" });
     }
   });
-  
+
   // Get recent requests
   app.get("/api/requests/recent", authMiddleware, async (req: any, res) => {
     try {
       const userId = req.userId;
       const user = req.user;
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       let requests;
       if (user?.role === 'super_admin') {
         // Super admins see all data
@@ -1117,7 +1120,7 @@ function isAllowedEmail(email: string): boolean {
       } else {
         requests = await dbStorage.getUserRequests(userId, 10);
       }
-      
+
       res.json(requests);
     } catch (error) {
       console.error("Error fetching recent requests:", error);
@@ -1130,15 +1133,15 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.userId;
       const user = req.user;
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       if (user.role !== 'admin' && user.role !== 'maintenance') {
         return res.status(403).json({ message: "Unauthorized" });
       }
-      
+
       // Only show maintenance staff from the same organization
       const maintenanceStaff = await dbStorage.getMaintenanceStaff(user.organizationId!);
       res.json(maintenanceStaff);
@@ -1149,7 +1152,7 @@ function isAllowedEmail(email: string): boolean {
   });
 
 
-  
+
   // Create a new building request with photo upload  
   app.post("/api/building-requests", (req, res, next) => {
     console.log("🚨🚨🚨 BUILDING REQUEST ENDPOINT HIT - PHOTOS DEBUG 🚨🚨🚨");
@@ -1160,28 +1163,28 @@ function isAllowedEmail(email: string): boolean {
     console.log("Session ID:", req.sessionID);
     console.log("Is authenticated:", req.isAuthenticated?.());
     console.log("User:", req.user);
-    
+
     // Check auth first
     if (!req.isAuthenticated?.() || !req.user) {
       console.log("=== AUTHENTICATION FAILED ===");
       return res.status(401).json({ message: "Unauthorized" });
     }
-    
+
     console.log("=== AUTH SUCCESS - PROCEEDING TO MULTER ===");
     console.log("Files before multer:", req.files);
     console.log("Body before multer:", req.body);
-    
+
     upload.array('photos', 5)(req, res, (err) => {
       console.log("🎯🎯🎯 MULTER CALLBACK REACHED 🎯🎯🎯");
       console.log("Error:", err);
       console.log("Files after multer:", req.files);
       console.log("Body after multer:", req.body);
-      
+
       if (err) {
         console.error("MULTER UPLOAD ERROR:", err);
         return res.status(400).json({ message: "File upload error", error: err.message });
       }
-      
+
       console.log("=== MULTER SUCCESS - PROCEEDING TO HANDLER ===");
       next();
     });
@@ -1190,16 +1193,16 @@ function isAllowedEmail(email: string): boolean {
       console.log("Building request submission started");
       const user = req.user;
       const userId = user?.id;
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       console.log("User info:", { userId, userRole: user.role, userOrg: user.organizationId });
-      
+
       // Log the raw request body for debugging
       console.log("Raw request body:", JSON.stringify(req.body, null, 2));
-      
+
       // Parse form data - handle multiple input formats
       let facility = req.body.facility || req.body.building;
       let event = req.body.event || req.body.requestTitle;
@@ -1208,7 +1211,7 @@ function isAllowedEmail(email: string): boolean {
       let buildingName = facility; // Use facility as building name
       let roomNumber = req.body.roomNumber || req.body["building.roomNumber"];
       let description = req.body.description || req.body["building.description"];
-      
+
       // Handle nested JSON object format (from form submissions)
       if (req.body.building && typeof req.body.building === 'object') {
         const buildingData = req.body.building;
@@ -1217,7 +1220,7 @@ function isAllowedEmail(email: string): boolean {
         facility = facility || buildingData.building;
         buildingName = buildingName || buildingData.building;
       }
-      
+
       console.log("Building request received:", {
         facility,
         event,
@@ -1228,7 +1231,7 @@ function isAllowedEmail(email: string): boolean {
         description,
         photoCount: req.files?.length || 0
       });
-      
+
       // Detailed logging for file uploads
       if (req.files && req.files.length > 0) {
         console.log("=== FILE UPLOAD DEBUG ===");
@@ -1241,11 +1244,11 @@ function isAllowedEmail(email: string): boolean {
             destination: file.destination,
             path: file.path
           });
-          
+
           // Check if file exists at the expected path
           const fileExists = fs.existsSync(file.path);
           console.log(`File exists at ${file.path}: ${fileExists}`);
-          
+
           if (fileExists) {
             const stats = fs.statSync(file.path);
             console.log(`File stats:`, { size: stats.size, mode: stats.mode });
@@ -1261,9 +1264,9 @@ function isAllowedEmail(email: string): boolean {
         console.log("Missing required fields:", { facility, roomNumber, description });
         return res.status(400).json({ message: "Missing required fields: facility, roomNumber, description" });
       }
-      
+
       // User already exists in database
-      
+
       // Validate request data
       console.log("Validating request data...");
       const requestData = insertRequestSchema.parse({
@@ -1276,12 +1279,12 @@ function isAllowedEmail(email: string): boolean {
         organizationId: user.organizationId
       });
       console.log("Request data validated successfully");
-      
+
       // Create the request first
       console.log("Creating basic request...");
       const createdRequest = await dbStorage.createRequest(requestData);
       console.log("Basic request created with ID:", createdRequest.id);
-      
+
       // Then validate building request data with the request ID
       console.log("Validating building request data...");
       const buildingRequestData = insertBuildingRequestSchema.parse({
@@ -1291,12 +1294,12 @@ function isAllowedEmail(email: string): boolean {
         description
       });
       console.log("Building request data validated successfully");
-      
+
       // Update the request with building-specific details
       console.log("Creating building request record...");
       await dbStorage.createBuildingRequest(buildingRequestData);
       console.log("Building request record created successfully");
-      
+
       // If photos were uploaded, save them to the database
       if (req.files && req.files.length > 0) {
         try {
@@ -1334,7 +1337,7 @@ function isAllowedEmail(email: string): boolean {
           // Continue with request processing even if photo upload fails
         }
       }
-      
+
       // Create initial status update
       console.log("Creating initial status update...");
       await dbStorage.createStatusUpdate({
@@ -1344,7 +1347,7 @@ function isAllowedEmail(email: string): boolean {
         note: "Building request submitted"
       });
       console.log("Status update created successfully");
-      
+
       // Send email notifications
       console.log("Sending email notifications...");
       try {
@@ -1355,7 +1358,7 @@ function isAllowedEmail(email: string): boolean {
         const adminEmails = user.organizationId !== undefined
           ? await dbStorage.getOrganizationAdminEmails(user.organizationId)
           : [];
-        
+
         if (organization && adminEmails.length > 0) {
           await sendRequestNotificationEmails({
             requestId: createdRequest.id,
@@ -1379,7 +1382,7 @@ function isAllowedEmail(email: string): boolean {
         console.error("Email notification error:", emailError);
         // Don't fail the request if email fails
       }
-      
+
       console.log("Building request submission completed successfully");
       res.status(201).json(createdRequest);
     } catch (error) {
@@ -1388,7 +1391,7 @@ function isAllowedEmail(email: string): boolean {
         console.error("Error details:", error.message);
         console.error("Error stack:", error.stack);
       }
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to create building request",
         error: error instanceof Error ? error.message : "Unknown error"
       });
@@ -1399,13 +1402,13 @@ function isAllowedEmail(email: string): boolean {
   app.get("/api/requests/my", authMiddleware, async (req: any, res) => {
     try {
       const { userId, user } = await getUserInfo(req);
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       const status = req.query.status as string | undefined;
-      
+
       const requests = await dbStorage.getUserRequestsByStatus(userId, status);
       res.json(requests);
     } catch (error) {
@@ -1413,21 +1416,21 @@ function isAllowedEmail(email: string): boolean {
       res.status(500).json({ message: "Failed to fetch user requests" });
     }
   });
-  
+
   // Get requests assigned to maintenance staff
   app.get("/api/requests/assigned", authMiddleware, async (req: any, res) => {
     try {
       const userId = req.userId;
       const user = req.user;
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       if (user.role !== 'maintenance' && user.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
-      
+
       const requests = await dbStorage.getAssignedRequests(userId);
       res.json(requests);
     } catch (error) {
@@ -1435,23 +1438,23 @@ function isAllowedEmail(email: string): boolean {
       res.status(500).json({ message: "Failed to fetch assigned requests" });
     }
   });
-  
+
   // Get all requests (admin/maintenance only)
   app.get("/api/requests/all", authMiddleware, async (req: any, res) => {
     try {
       const { userId, user } = await getUserInfo(req);
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       const status = req.query.status as string | undefined;
       const organizationId = req.query.organizationId as string | undefined;
-      
+
       if (user.role !== 'admin' && user.role !== 'maintenance' && user.role !== 'super_admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
-      
+
       let requests;
       if (user.role === 'super_admin') {
         // Super admins can filter by organization or see all data
@@ -1473,11 +1476,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const { userId, user } = await getUserInfo(req);
       const requestId = parseInt(req.params.id);
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       // Admin and maintenance staff can access all requests
       if (user.role !== 'admin' && user.role !== 'maintenance') {
         // Regular users need to be the requestor
@@ -1486,12 +1489,12 @@ function isAllowedEmail(email: string): boolean {
           return res.status(403).json({ message: "Unauthorized" });
         }
       }
-      
+
       const request = await dbStorage.getRequestDetails(requestId);
       if (!request) {
         return res.status(404).json({ message: "Request not found" });
       }
-      
+
       res.json(request);
     } catch (error) {
       console.error("Error fetching request details:", error);
@@ -1504,11 +1507,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const { userId, user } = await getUserInfo(req);
       const requestId = parseInt(req.params.id);
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       // Admin and maintenance staff can access all requests
       if (user.role !== 'admin' && user.role !== 'maintenance') {
         // Regular users need to be the requestor
@@ -1517,7 +1520,7 @@ function isAllowedEmail(email: string): boolean {
           return res.status(403).json({ message: "Unauthorized" });
         }
       }
-      
+
       const timeline = await dbStorage.getRequestTimeline(requestId);
       res.json(timeline);
     } catch (error) {
@@ -1531,17 +1534,17 @@ function isAllowedEmail(email: string): boolean {
     try {
       const { userId, user } = await getUserInfo(req);
       const requestId = parseInt(req.params.id);
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       // Check if user has access to this request
       const canAccess = await dbStorage.canAccessRequest(userId, requestId);
       if (!canAccess) {
         return res.status(403).json({ message: "Unauthorized" });
       }
-      
+
       const messages = await dbStorage.getRequestMessages(requestId);
       res.json(messages);
     } catch (error) {
@@ -1555,24 +1558,24 @@ function isAllowedEmail(email: string): boolean {
     try {
       const { userId, user } = await getUserInfo(req);
       const requestId = parseInt(req.params.id);
-      
+
       if (!userId || !user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       // Check if user has access to this request
       const canAccess = await dbStorage.canAccessRequest(userId, requestId);
       if (!canAccess) {
         return res.status(403).json({ message: "Unauthorized" });
       }
-      
+
       // Validate message data
       const messageData = insertMessageSchema.parse({
         requestId,
         senderId: userId,
         content: req.body.content
       });
-      
+
       const message = await dbStorage.createMessage(messageData);
       res.status(201).json(message);
     } catch (error) {
@@ -1588,11 +1591,11 @@ function isAllowedEmail(email: string): boolean {
       const userId = req.userId;
       const user = req.user;
       const requestId = parseInt(req.params.id);
-      
+
       if (user?.role !== 'admin' && user?.role !== 'maintenance') {
         return res.status(403).json({ message: "Unauthorized" });
       }
-      
+
       // Validate assignment data
       const assignmentData = insertAssignmentSchema.parse({
         requestId,
@@ -1600,10 +1603,10 @@ function isAllowedEmail(email: string): boolean {
         assignerId: userId, // This comes from getUserInfo now, so it's safe
         internalNotes: req.body.internalNotes || ""
       });
-      
+
       // Create assignment
       const assignment = await dbStorage.assignRequest(assignmentData);
-      
+
       // Update request status to approved if it's pending
       const request = await dbStorage.getRequestById(requestId);
       if (request && request.status === 'pending') {
@@ -1614,7 +1617,7 @@ function isAllowedEmail(email: string): boolean {
           note: `Request approved and assigned to staff`
         });
       }
-      
+
       res.status(201).json(assignment);
     } catch (error) {
       console.error("Error assigning request:", error);
@@ -1630,9 +1633,9 @@ function isAllowedEmail(email: string): boolean {
       console.log("Request body:", req.body);
       console.log("Session:", req.session);
       console.log("User:", req.user);
-      
+
       const requestId = parseInt(req.params.id);
-      
+
       // Simplified status update without auth check
       const statusUpdateData = {
         requestId,
@@ -1640,15 +1643,15 @@ function isAllowedEmail(email: string): boolean {
         updatedById: req.user?.id || "test-user",
         note: req.body.note || "Test status update"
       };
-      
+
       console.log("Status update data:", statusUpdateData);
-      
+
       await dbStorage.updateRequestStatus(statusUpdateData);
-      
+
       res.json({ success: true, message: "Direct test successful" });
     } catch (error) {
       console.error("Direct test error:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Direct test failed",
         error: error instanceof Error ? error.message : "Unknown error"
       });
@@ -1662,21 +1665,21 @@ function isAllowedEmail(email: string): boolean {
       console.log("Request ID:", req.params.id);
       console.log("Request body:", req.body);
       console.log("User:", { id: req.userId, role: req.user?.role });
-      
+
       // User is already authenticated by authMiddleware
       const userId = req.userId;
       const user = req.user;
       const requestId = parseInt(req.params.id);
-      
+
       // Check if user has proper permissions to update status
-      const canUpdateStatus = user?.role === 'admin' || user?.role === 'maintenance' || 
-                             (req.body.status === 'cancelled' && await dbStorage.isRequestor(userId, requestId));
-      
+      const canUpdateStatus = user?.role === 'admin' || user?.role === 'maintenance' ||
+        (req.body.status === 'cancelled' && await dbStorage.isRequestor(userId, requestId));
+
       if (!canUpdateStatus) {
         console.log("Permission denied for user:", { userId, role: user?.role, requestedStatus: req.body.status });
         return res.status(403).json({ message: "Unauthorized" });
       }
-      
+
       // Validate status update data
       console.log("Validating status update data...");
       const statusUpdateData = insertStatusUpdateSchema.parse({
@@ -1685,25 +1688,25 @@ function isAllowedEmail(email: string): boolean {
         updatedById: userId,
         note: req.body.note
       });
-      
+
       console.log("Validated status update data:", statusUpdateData);
-      
+
       // Update request status and priority if provided
       console.log("Updating request status...");
       await dbStorage.updateRequestStatus(statusUpdateData);
-      
+
       // Update priority if provided
       if (req.body.priority) {
         console.log("Updating priority to:", req.body.priority);
         await dbStorage.updateRequestPriority(requestId, req.body.priority);
       }
-      
+
       console.log("Status update successful");
       res.json({ success: true });
     } catch (error) {
       console.error("Error updating request status:", error);
       console.error("Error stack:", (error as Error).stack);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to update request status",
         error: error instanceof Error ? error.message : "Unknown error"
       });
@@ -1738,7 +1741,7 @@ function isAllowedEmail(email: string): boolean {
 
 
   // Super Admin API routes for managing buildings and facilities
-  
+
   // Test route to check organizations data directly
   app.get("/api/test/organizations", async (req: any, res) => {
     try {
@@ -1770,11 +1773,11 @@ function isAllowedEmail(email: string): boolean {
     console.log("Request headers:", req.headers);
     console.log("Request user:", req.user);
     console.log("Session:", req.session);
-    
+
     try {
       // Skip authentication temporarily to identify the issue
       console.log("Bypassing auth check temporarily");
-      
+
       const organizations = await dbStorage.getAllOrganizations();
       console.log("Organizations retrieved successfully:", organizations);
       res.json(organizations);
@@ -1789,11 +1792,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const orgData = {
         name: req.body.name,
         slug: req.body.slug,
@@ -1801,7 +1804,7 @@ function isAllowedEmail(email: string): boolean {
         logoUrl: req.body.logoUrl,
         settings: req.body.settings || {}
       };
-      
+
       const organization = await dbStorage.createOrganization(orgData);
       res.json(organization);
     } catch (error) {
@@ -1815,11 +1818,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const orgId = parseInt(req.params.orgId);
       const buildings = await dbStorage.getBuildingsByOrganization(orgId);
       res.json(buildings);
@@ -1834,11 +1837,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       // Ensure roomNumbers is always an array
       let roomNumbers = [];
       if (Array.isArray(req.body.roomNumbers)) {
@@ -1854,7 +1857,7 @@ function isAllowedEmail(email: string): boolean {
         room_numbers: roomNumbers, // Always an array
         isActive: true,
       };
-      
+
       const building = await dbStorage.createBuilding(buildingData);
       // Map DB result to ensure roomNumbers is always an array
       const result = {
@@ -1873,11 +1876,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const buildingId = parseInt(req.params.id);
       // Ensure roomNumbers is always an array
       let updateRoomNumbers = [];
@@ -1892,7 +1895,7 @@ function isAllowedEmail(email: string): boolean {
         description: req.body.description,
         room_numbers: updateRoomNumbers, // Always an array
       };
-      
+
       const building = await dbStorage.updateBuilding(buildingId, updates);
       // Map DB result to ensure roomNumbers is always an array
       const result = {
@@ -1911,11 +1914,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const buildingId = parseInt(req.params.id);
       await dbStorage.deleteBuilding(buildingId);
       res.json({ success: true });
@@ -1930,11 +1933,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const orgId = parseInt(req.params.orgId);
       const facilities = await dbStorage.getFacilitiesByOrganization(orgId);
       res.json(facilities);
@@ -1949,11 +1952,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const facilityData = req.body;
       const facility = await dbStorage.createFacility(facilityData);
       res.json(facility);
@@ -1968,11 +1971,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const facilityId = parseInt(req.params.id);
       const updates = req.body;
       const facility = await dbStorage.updateFacility(facilityId, updates);
@@ -1988,11 +1991,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const facilityId = parseInt(req.params.id);
       await dbStorage.deleteFacility(facilityId);
       res.json({ success: true });
@@ -2007,11 +2010,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const orgId = parseInt(req.params.orgId);
       const facilities = await dbStorage.getFacilitiesByOrganization(orgId);
       res.json(facilities);
@@ -2026,11 +2029,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       // Ensure roomNumbers is always an array
       let roomNumbers = [];
       if (Array.isArray(req.body.roomNumbers)) {
@@ -2046,7 +2049,7 @@ function isAllowedEmail(email: string): boolean {
         room_numbers: roomNumbers, // Always an array
         isActive: true,
       };
-      
+
       const building = await dbStorage.createBuilding(buildingData);
       // Map DB result to ensure roomNumbers is always an array
       const result = {
@@ -2065,11 +2068,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const buildingId = parseInt(req.params.id);
       // Ensure roomNumbers is always an array
       let updateRoomNumbers = [];
@@ -2084,7 +2087,7 @@ function isAllowedEmail(email: string): boolean {
         description: req.body.description,
         room_numbers: updateRoomNumbers, // Always an array
       };
-      
+
       const building = await dbStorage.updateBuilding(buildingId, updates);
       // Map DB result to ensure roomNumbers is always an array
       const result = {
@@ -2103,11 +2106,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const buildingId = parseInt(req.params.id);
       await dbStorage.deleteBuilding(buildingId);
       res.json({ success: true });
@@ -2122,11 +2125,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const facilityData = req.body;
       const facility = await dbStorage.createFacility(facilityData);
       res.json(facility);
@@ -2141,11 +2144,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const facilityId = parseInt(req.params.id);
       const updates = req.body;
       const facility = await dbStorage.updateFacility(facilityId, updates);
@@ -2161,11 +2164,11 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.id;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const facilityId = parseInt(req.params.id);
       await dbStorage.deleteFacility(facilityId);
       res.json({ success: true });
@@ -2180,42 +2183,42 @@ function isAllowedEmail(email: string): boolean {
     try {
       const userId = req.user.claims.sub;
       const user = await dbStorage.getUser(userId);
-      
+
       if (user?.role !== 'admin') {
         return res.status(403).json({ message: "Unauthorized" });
       }
-      
+
       const reportType = req.query.type || 'monthly';
       const reports = await dbStorage.getReportsData(reportType);
-      
+
       res.json(reports);
     } catch (error) {
       console.error("Error fetching reports data:", error);
       res.status(500).json({ message: "Failed to fetch reports data" });
     }
   });
-  
+
   // Upload photo to request
   app.post("/api/requests/:id/photos", authMiddleware, upload.single('photo'), async (req: any, res) => {
     try {
       const { userId } = await getUserInfo(req);
       const requestId = parseInt(req.params.id);
-      
+
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       // Verify the user has access to this request
       const canAccess = await dbStorage.canAccessRequest(userId, requestId);
       if (!canAccess) {
         return res.status(403).json({ message: "Unauthorized to add photos to this request" });
       }
-      
+
       // Ensure a file was uploaded
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded or invalid file type" });
       }
-      
+
       // Read file buffer for S3 upload
       const fileBuffer = req.file.buffer || (req.file.path ? require('fs').readFileSync(req.file.path) : undefined);
       if (!fileBuffer) {
@@ -2226,11 +2229,11 @@ function isAllowedEmail(email: string): boolean {
         requestId,
         filename: req.file.filename,
         originalFilename: req.file.originalname,
-        filePath: undefined, 
+        filePath: undefined,
         mimeType: req.file.mimetype,
         size: req.file.size,
         uploadedById: userId,
-        photoUrl: undefined, 
+        photoUrl: undefined,
         fileBuffer
       };
       const photo = await dbStorage.saveRequestPhoto(photoData);
@@ -2243,49 +2246,49 @@ function isAllowedEmail(email: string): boolean {
       res.status(500).json({ message: "Failed to upload and save photo" });
     }
   });
-  
+
   // Get request photos
   app.get("/api/requests/:id/photos", authMiddleware, async (req: any, res) => {
     try {
       const { userId } = await getUserInfo(req);
       const requestId = parseInt(req.params.id);
-      
+
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       // Verify the user has access to this request
       const canAccess = await dbStorage.canAccessRequest(userId, requestId);
       if (!canAccess) {
         return res.status(403).json({ message: "Unauthorized to view photos for this request" });
       }
-      
+
       // Get photos for this request
       const photos = await dbStorage.getRequestPhotos(requestId);
-      
+
       res.json(photos);
     } catch (error) {
       console.error("Error fetching request photos:", error);
       res.status(500).json({ message: "Failed to fetch request photos" });
     }
   });
-  
+
   // Serve uploaded files - public access, no auth required
   app.get("/api/uploads/:filename", (req: any, res) => {
     try {
       const { filename } = req.params;
       const filePath = path.join(uploadDir, filename);
-      
+
       // Basic security check to prevent directory traversal
       if (!filename || filename.includes('..') || filename.includes('/')) {
         return res.status(400).json({ message: "Invalid filename" });
       }
-      
+
       // Check if file exists
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({ message: "File not found" });
       }
-      
+
       // Serve the file with correct mime type
       res.sendFile(path.resolve(filePath));
     } catch (error) {
@@ -2295,22 +2298,22 @@ function isAllowedEmail(email: string): boolean {
   });
 
   // Room History endpoints
-  
+
   // Get all building names for room history dropdown
   app.get("/api/room-buildings", authMiddleware, async (req: any, res) => {
     try {
       console.log("=== /api/room-buildings endpoint called ===");
-      
+
       // Get building names from building_requests table
       const buildingNames = await dbStorage.getAllBuildings();
       console.log("Building names from getAllBuildings:", buildingNames);
-      
+
       // If no building names found in building_requests, fall back to buildings table names
       if (!buildingNames || buildingNames.length === 0) {
         console.log("No buildings found in building_requests, checking buildings table");
         const { userId } = await getUserInfo(req);
         const user = await dbStorage.getUser(userId);
-        
+
         if (user?.organizationId) {
           const buildings = await dbStorage.getBuildingsByOrganization(user.organizationId);
           const names = buildings.map((building: any) => building.name);
@@ -2327,23 +2330,23 @@ function isAllowedEmail(email: string): boolean {
       res.status(500).json({ message: "Failed to fetch buildings" });
     }
   });
-  
+
   // Get room history - requests by building and optionally room number
   app.get("/api/room-history", authMiddleware, async (req: any, res) => {
     try {
       const { userId } = await getUserInfo(req);
-      
+
       if (!userId) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-      
+
       const building = req.query.building as string;
       const roomNumber = req.query.roomNumber as string | undefined;
-      
+
       if (!building) {
         return res.status(400).json({ message: "Building parameter is required" });
       }
-      
+
       const requests = await dbStorage.getRequestsByBuilding(building, roomNumber);
       res.json(requests);
     } catch (error) {
@@ -2356,7 +2359,7 @@ function isAllowedEmail(email: string): boolean {
   app.get("/api/admin/organizations", authMiddleware, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       // Only allow super admins to access this endpoint
       if (user.role !== 'super_admin') {
         return res.status(403).json({ error: "Access denied. Super admin required." });
@@ -2373,14 +2376,14 @@ function isAllowedEmail(email: string): boolean {
   app.post("/api/admin/organizations", authMiddleware, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       // Only allow super admins to create organizations
       if (user.role !== 'super_admin') {
         return res.status(403).json({ error: "Access denied. Super admin required." });
       }
 
       const { name, slug, domain, logoUrl } = req.body;
-      
+
       // Validate required fields
       if (!name || !slug) {
         return res.status(400).json({ error: "Name and slug are required" });
@@ -2404,7 +2407,7 @@ function isAllowedEmail(email: string): boolean {
   app.patch("/api/admin/organizations/:id", authMiddleware, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       // Only allow super admins to update organizations
       if (user.role !== 'super_admin') {
         return res.status(403).json({ error: "Access denied. Super admin required." });
@@ -2412,7 +2415,7 @@ function isAllowedEmail(email: string): boolean {
 
       const { id } = req.params;
       const { name, domain, logoUrl } = req.body;
-      
+
       const organization = await dbStorage.updateOrganization(parseInt(id), {
         name,
         domain: domain || null,
@@ -2435,18 +2438,18 @@ function isAllowedEmail(email: string): boolean {
       const currentUserId = req.user?.id || req.user?.claims?.sub;
       console.log("Current user ID from session:", currentUserId);
       console.log("Full user object:", req.user);
-      
+
       if (!currentUserId) {
         return res.status(401).json({ message: "User ID not found in session" });
       }
-      
+
       const currentUser = await dbStorage.getUser(currentUserId);
       console.log("Current user from database:", currentUser);
-      
+
       if (!currentUser) {
         return res.status(404).json({ message: "User not found in database" });
       }
-      
+
       if (currentUser.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
@@ -2465,29 +2468,29 @@ function isAllowedEmail(email: string): boolean {
     try {
       const currentUserId = req.user.id;
       const currentUser = await dbStorage.getUser(currentUserId);
-      
+
       if (currentUser?.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const { email, firstName, lastName, role, organizationId } = req.body;
-      
+
       // Validate required fields - organizationId is optional for super_admin
       if (!email || !firstName || !lastName || !role) {
         return res.status(400).json({ message: "Email, first name, last name, and role are required" });
       }
-      
+
       // Super admins don't need an organization, others do
       if (role !== 'super_admin' && !organizationId) {
         return res.status(400).json({ message: "Organization is required for non-super admin users" });
       }
-      
+
       // Check if user already exists
       const existingUser = await dbStorage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "User with this email already exists" });
       }
-      
+
       // Create user data
       const userData = {
         id: crypto.randomUUID(),
@@ -2500,7 +2503,7 @@ function isAllowedEmail(email: string): boolean {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      
+
       const newUser = await dbStorage.upsertUser(userData);
       res.json(newUser);
     } catch (error) {
@@ -2513,26 +2516,26 @@ function isAllowedEmail(email: string): boolean {
   app.patch("/api/admin/users/:userId/role", isAuthenticated, async (req: any, res) => {
     try {
       const currentUserId = req.user?.id || req.user?.claims?.sub;
-      
+
       if (!currentUserId) {
         return res.status(401).json({ message: "User ID not found in session" });
       }
-      
+
       const currentUser = await dbStorage.getUser(currentUserId);
-      
+
       if (!currentUser || currentUser.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const { userId } = req.params;
       const { role } = req.body;
-      
+
       // Validate role
       const validRoles = ['requester', 'maintenance', 'admin', 'super_admin'];
       if (!validRoles.includes(role)) {
         return res.status(400).json({ message: "Invalid role" });
       }
-      
+
       const updatedUser = await dbStorage.updateUserRole(userId, role);
       res.json(updatedUser);
     } catch (error) {
@@ -2545,20 +2548,20 @@ function isAllowedEmail(email: string): boolean {
   app.patch("/api/admin/users/:userId/organization", isAuthenticated, async (req: any, res) => {
     try {
       const currentUserId = req.user?.id || req.user?.claims?.sub;
-      
+
       if (!currentUserId) {
         return res.status(401).json({ message: "User ID not found in session" });
       }
-      
+
       const currentUser = await dbStorage.getUser(currentUserId);
-      
+
       if (!currentUser || currentUser.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const { userId } = req.params;
       const { organizationId } = req.body;
-      
+
       const updatedUser = await dbStorage.updateUserOrganization(userId, organizationId);
       res.json(updatedUser);
     } catch (error) {
@@ -2572,28 +2575,28 @@ function isAllowedEmail(email: string): boolean {
     try {
       // Extract user ID from session authentication
       const currentUserId = req.user?.id || req.user?.claims?.sub;
-      
+
       if (!currentUserId) {
         return res.status(401).json({ message: "User ID not found in session" });
       }
-      
+
       const currentUser = await dbStorage.getUser(currentUserId);
-      
+
       if (!currentUser) {
         return res.status(404).json({ message: "Current user not found in database" });
       }
-      
+
       if (currentUser.role !== 'super_admin') {
         return res.status(403).json({ message: "Super admin access required" });
       }
-      
+
       const { userId } = req.params;
-      
+
       // Prevent user from deleting themselves
       if (userId === currentUserId) {
         return res.status(400).json({ message: "Cannot delete your own account" });
       }
-      
+
       await dbStorage.deleteUser(userId);
       console.log(`User ${userId} deleted by ${currentUser.email}`);
       res.json({ message: "User deleted successfully" });
@@ -2638,17 +2641,17 @@ function isAllowedEmail(email: string): boolean {
         console.warn("⚠️ Missing fields:", req.body);
         return res.status(400).json({ message: "Missing required fields" });
       }
-  
+
       // Check if user exists
       const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
       if (existing) {
         console.log("❌ User already exists:", email);
         return res.status(409).json({ message: "User with this email already exists" });
       }
-  
+
       // Hash password
       const hashed = await bcrypt.hash(password, 10);
-  
+
       // Create user
       const id = crypto.randomUUID();
       const now = new Date();
@@ -2662,9 +2665,9 @@ function isAllowedEmail(email: string): boolean {
         createdAt: now,
         updatedAt: now,
       }).returning();
-  
+
       console.log("✅ User created:", user);
-  
+
       return res.status(201).json({
         message: "Signup successful",
         user: {
@@ -2682,7 +2685,7 @@ function isAllowedEmail(email: string): boolean {
       });
     }
   });
-  
+
   app.post("/api/auth/login", async (req, res) => {
     try {
       let { email, password } = req.body;
@@ -2730,15 +2733,30 @@ function isAllowedEmail(email: string): boolean {
     }
   });
 
-  
-  
+
+
   app.get('/api/logout', (req, res) => {
     req.session.destroy(() => {
       res.clearCookie('connect.sid'); // This removes the session cookie from browser
       res.json({ message: "Logged out" });
     });
   });
-  
+
+  app.get('/get-presigned-url', (req, res) => {
+    const { key } = req.query; // the S3 key/path
+
+    const params = {
+      Bucket: 'repair-request-121905340783',
+      Key: key,
+      Expires: 60 * 5 // 5 minutes
+    };
+
+    s3.getSignedUrl('getObject', params, (err, url) => {
+      if (err) return res.status(500).send(err);
+      res.json({ url });
+    });
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

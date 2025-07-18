@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -10,13 +10,14 @@ import RequestTimeline from "@/components/requests/RequestTimeline";
 import MessageThread from "@/components/requests/MessageThread";
 import AdminActions from "@/components/requests/AdminActions";
 import { format } from "date-fns";
+import { useEffect, useState } from "react"
 
 interface RequestDetailProps {
   id: string;
 }
 
 export default function RequestDetail({ id }: RequestDetailProps) {
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const requestId = parseInt(id);
 
@@ -73,6 +74,25 @@ export default function RequestDetail({ id }: RequestDetailProps) {
         </div>
       </div>
     );
+  }
+
+  // Helper to extract S3 key from a full S3 URL
+  function extractS3Key(url: string) {
+    const prefix = "https://repair-request-121905340783.s3.eu-north-1.amazonaws.com/";
+    return url && url.startsWith(prefix) ? url.slice(prefix.length) : url;
+  }
+
+  function S3Image({ s3Key, alt }: { s3Key: string, alt?: string }) {
+    const [url, setUrl] = useState(null);
+
+    useEffect(() => {
+      fetch(`/get-presigned-url?key=${encodeURIComponent(s3Key)}`)
+        .then(res => res.json())
+        .then(data => setUrl(data.url));
+    }, [s3Key]);
+
+    if (!url) return <div>Loading...</div>;
+    return <img src={url} alt="From S3" />;
   }
 
   return (
@@ -340,28 +360,21 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                           className="group relative rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-200"
                         >
                           <div className="aspect-video w-full bg-gray-100">
-                            <img
-                              src={photo.photoUrl ? `/${photo.photoUrl}` : (photo.filename ? `/uploads/photos/${photo.filename}` : '')}
-                              alt={photo.originalFilename || "Maintenance request photo"}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
-                                const parent = target.parentElement;
-                                if (parent && !parent.querySelector('.missing-image-notice')) {
-                                  const notice = document.createElement('div');
-                                  notice.className = 'missing-image-notice flex items-center justify-center h-full text-gray-500 text-sm';
-                                  notice.innerHTML = `
-                                    <div class="text-center">
-                                      <div class="mb-2">📷</div>
-                                      <div>Image unavailable</div>
-                                      <div class="text-xs">${photo.originalFilename || 'Photo'}</div>
-                                    </div>
-                                  `;
-                                  parent.appendChild(notice);
-                                }
-                              }}
-                            />
+                            {/* S3Image integration for displaying S3 photos */}
+                            {(() => {
+                              const key = photo.filename && photo.filename.startsWith("http")
+                                ? extractS3Key(photo.filename)
+                                : `requests/${request.id}/${photo.filename}`;
+                              console.log("S3Key for photo", photo, ":", key);
+                              return (
+                                <S3Image
+                                  s3Key={key}
+                                  alt={photo.originalFilename || "Maintenance request photo"}
+                                />
+                              );
+                            })()}
+
+                            {/* Old <img> tag replaced above. Error handling for unavailable images should be handled in S3Image. */}
                           </div>
                           <div className="p-3">
                             <p className="text-sm font-medium">

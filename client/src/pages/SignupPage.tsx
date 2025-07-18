@@ -23,39 +23,39 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-  
+
     if (!fullName || !email || !password || !confirmPassword) {
       setError("Please fill in all fields.");
       return;
     }
-  
+
     if (password !== confirmPassword) {
       setError("Passwords do not match.");
       return;
     }
-  
+
     setLoading(true);
     try {
       const nameParts = fullName.trim().split(" ").filter(part => part.length > 0);
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
-      
+
       // Validate that we have both first and last name
       if (!firstName || !lastName) {
         setError("Please enter both first and last name.");
         setLoading(false);
         return;
       }
-  
+
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, firstName, lastName }),
       });
-  
+
       const data = await res.json();
       console.log("🔁 Server Response: ", data);
-  
+
       if (!res.ok) {
         console.error("❌ Signup Error:", data);
         setError(data.message || "Signup failed");
@@ -74,7 +74,7 @@ export default function SignupPage() {
       setLoading(false);
     }
   };
-  
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
@@ -125,10 +125,13 @@ export default function SignupPage() {
               variant="outline"
               className="flex-1 h-12 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 bg-transparent"
             >
-              <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+              <svg width="20" height="20" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <rect width="50" height="50" x="0" y="0" fill="#F25022" />
+                <rect width="50" height="50" x="50" y="0" fill="#7FBA00" />
+                <rect width="50" height="50" x="0" y="50" fill="#00A4EF" />
+                <rect width="50" height="50" x="50" y="50" fill="#FFB900" />
               </svg>
-              Facebook
+              Microsoft
             </Button>
           </div>
 
