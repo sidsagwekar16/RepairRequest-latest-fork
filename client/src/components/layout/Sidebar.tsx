@@ -132,7 +132,7 @@ export default function Sidebar({ isMobileOpen, closeMobileSidebar, user }: Side
               await fetch(`${import.meta.env.VITE_API_URL}/api/logout`, { credentials: "include" });
               // Clear React Query cache
               queryClient.clear();
-              window.location.href = "/landing";
+              window.location.href = "/";
             }}
             onTouchStart={(e) => {
               e.currentTarget.style.backgroundColor = '#f3f4f6';

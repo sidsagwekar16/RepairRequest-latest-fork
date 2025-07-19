@@ -33,6 +33,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import SignupPage from "./pages/SignupPage";
 import LoginPage from "./pages/LoginPage";
 import { BrowserRouter, Outlet, Route, Routes, useParams } from "react-router-dom";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 
 function RequestDetailWrapper() {
   const { id } = useParams();
@@ -105,23 +106,24 @@ function AppContent() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
 
         {/* Protected routes */}
         {isAuthenticated && (
           <Route element={<ProtectedLayout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/new-facilities-request" element={<RequestForm />} />
-          <Route path="/new-building-request" element={<BuildingRequestForm />} />
-          <Route path="/requests/:id" element={<RequestDetailWrapper />} />
-          <Route path="/my-requests" element={<MyRequests />} />
-          <Route path="/assigned-requests" element={<AssignedRequests />} />
-          <Route path="/manage-requests" element={<ManageRequests />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/room-history" element={<RoomHistory />} />
-          <Route path="/admin/organizations" element={<AdminOrganizations />} />
-          <Route path="/admin/buildings-facilities" element={<AdminBuildingsFacilities />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-        </Route>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/new-facilities-request" element={<RequestForm />} />
+            <Route path="/new-building-request" element={<BuildingRequestForm />} />
+            <Route path="/requests/:id" element={<RequestDetailWrapper />} />
+            <Route path="/my-requests" element={<MyRequests />} />
+            <Route path="/assigned-requests" element={<AssignedRequests />} />
+            <Route path="/manage-requests" element={<ManageRequests />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/room-history" element={<RoomHistory />} />
+            <Route path="/admin/organizations" element={<AdminOrganizations />} />
+            <Route path="/admin/buildings-facilities" element={<AdminBuildingsFacilities />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+          </Route>
         )}
 
         {/* Fallback for unknown routes */}

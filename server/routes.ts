@@ -9,6 +9,7 @@ import fs from "fs";
 import crypto from "crypto";
 import z from "zod"
 import AWS from 'aws-sdk';
+import { sendEmail } from "./emailService";
 
 // Extend session interface to include user property
 declare module "express-session" {
@@ -83,6 +84,39 @@ const bulkSchema = z.array(
 const s3 = new AWS.S3();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+
+  // Forgot password endpoint
+
+
+  app.post("/api/forgot-password", async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ status: "error", error: { message: "Email is required" } });
+    }
+    try {
+      const user = await dbStorage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ status: "error", error: { message: "User not found" } });
+      }
+
+      // Actually send the email
+      const emailSent = await sendEmail({
+        to: user.email,
+        from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+        subject: "Password Reset Request",
+        text: `Hello,\n\nYou requested a password reset. If this was you, click the link below to reset your password. If not, you can ignore this email.\n\n[Reset Link Here]`,
+        html: `<p>Hello,</p><p>You requested a password reset. If this was you, click the link below to reset your password. If not, you can ignore this email.</p><p><a href='#'>Reset Password</a></p>`
+      });
+
+      if (!emailSent) {
+        return res.status(500).json({ status: "error", error: { message: "Failed to send email" } });
+      }
+
+      return res.json({ status: "success", data: undefined });
+    } catch (err) {
+      return res.status(500).json({ status: "error", error: { message: "Internal server error" } });
+    }
+  });
 
   app.post("/api/admin/users/bulk", isAuthenticated, async (req: any, res) => {
     try {
@@ -715,7 +749,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: req.body.name,
         address: req.body.address,
         description: req.body.description,
-        room_numbers: roomNumbers, // Always an array
+        roomNumbers: roomNumbers, // Always an array
         isActive: true,
       };
 
@@ -2054,7 +2088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Map DB result to ensure roomNumbers is always an array
       const result = {
         ...building,
-        roomNumbers: building.roomNumbers ?? [],
+        roomNumbers: building.room_numbers ?? [],
       };
       res.json(result);
     } catch (error) {
@@ -2085,7 +2119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name: req.body.name,
         address: req.body.address,
         description: req.body.description,
-        room_numbers: updateRoomNumbers, // Always an array
+        roomNumbers: updateRoomNumbers, // Always an array
       };
 
       const building = await dbStorage.updateBuilding(buildingId, updates);
