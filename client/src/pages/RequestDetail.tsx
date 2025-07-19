@@ -381,10 +381,10 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                               {photo.originalFilename || "Maintenance photo"}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {photo.createdAt ?
+                              {photo.uploadedAt ?
                                 (() => {
                                   try {
-                                    return format(new Date(photo.createdAt), 'MMM d, yyyy')
+                                    return format(new Date(photo.uploadedAt), 'MMM d, yyyy')
                                   } catch (e) {
                                     return 'Date unavailable'
                                   }
@@ -418,10 +418,10 @@ export default function RequestDetail({ id }: RequestDetailProps) {
                               {photo.originalFilename || photo.filename || "Photo"}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {photo.createdAt ?
+                              {photo.uploadedAt ?
                                 (() => {
                                   try {
-                                    return format(new Date(photo.createdAt), 'MMM d, yyyy')
+                                    return format(new Date(photo.uploadedAt), 'MMM d, yyyy')
                                   } catch (e) {
                                     return 'Date unavailable'
                                   }
