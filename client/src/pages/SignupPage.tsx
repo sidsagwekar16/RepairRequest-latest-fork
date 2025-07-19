@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Mail, Lock, Eye, EyeOff, User } from "lucide-react"
 import { useState } from "react"
+import logoPath from "../../public/Logo.png";
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -86,9 +87,7 @@ export default function SignupPage() {
         <div className="w-full lg:w-1/2 p-8 lg:p-12">
           {/* Logo */}
           <div className="flex items-center gap-2 mb-8">
-            <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
-              <div className="w-3 h-3 bg-white rounded-sm"></div>
-            </div>
+          <img src={logoPath} alt="RepairRequest Logo" className="w-10 h-10" />
             <span className="text-lg font-semibold text-gray-900">Repair Request</span>
           </div>
 
