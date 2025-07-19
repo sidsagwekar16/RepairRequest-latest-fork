@@ -160,7 +160,6 @@ export default function Contact() {
                   <div>
                     <h3 className="font-semibold text-gray-900">Email</h3>
                     <p className="text-gray-600">info@schoolhouselogistics.com</p>
-                    <p className="text-gray-600">support@schoolhouselogistics.com</p>
                   </div>
                 </div>
 
@@ -168,8 +167,8 @@ export default function Contact() {
                   <Phone className="h-6 w-6 text-blue-600 mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Phone</h3>
-                    <p className="text-gray-600">Sales: 1-800-REPAIR-1</p>
-                    <p className="text-gray-600">Support: 1-800-REPAIR-2</p>
+                    <p className="text-gray-600">Sales: 407-494-5230</p>
+                    <p className="text-gray-600">Support: 407-494-5230</p>
                   </div>
                 </div>
 
