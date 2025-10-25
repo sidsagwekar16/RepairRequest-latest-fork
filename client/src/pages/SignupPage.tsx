@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Mail, Lock, Eye, EyeOff, User } from "lucide-react"
 import { useState } from "react"
-import logoPath from "../../public/Logo.png";
+import { useAuth } from "@/hooks/useAuth"
+import { useQueryClient } from "@tanstack/react-query"
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -19,8 +20,10 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+ 
 
   const navigate = useNavigate();
+  const queryClient = useQueryClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,27 +55,39 @@ export default function SignupPage() {
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/signup`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json"},
         body: JSON.stringify({ email, password, firstName, lastName }),
+        credentials: "include" // send cookie with request
       });
-
       const data = await res.json();
-      console.log("🔁 Server Response: ", data);
+      console.log("Server Response: ", data);
 
+      console.log("SignUp data: ", res)
       if (!res.ok) {
-        console.error("❌ Signup Error:", data);
+        console.error("Signup Error:", data);
         setError(data.message || "Signup failed");
       } else {
-        console.log("✅ Signup successful");
+        console.log("Signup successful");
         setSuccess("Signup successful! You can now log in.");
         setFullName("");
         setEmail("");
         setPassword("");
         setConfirmPassword("");
-        navigate("/login");
+
+        await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+         // Role-based navigation
+         if (data.user.role === "admin") {
+          navigate("/dashboard");
+        } else if (data.user.role === "maintenance") {
+          navigate("/assigned-requests");
+        } else {
+          navigate("/dashboard"); // requester or default
+        }
+        
+        // navigate("/login");
       }
     } catch (err: any) {
-      console.error("🔥 Network/Unexpected Error:", err);
+      console.error("Network/Unexpected Error:", err);
       setError("Signup failed. Please try again.");
     } finally {
       setLoading(false);
@@ -87,7 +102,7 @@ export default function SignupPage() {
         <div className="w-full lg:w-1/2 p-8 lg:p-12">
           {/* Logo */}
           <div className="flex items-center gap-2 mb-8">
-          <img src={logoPath} alt="RepairRequest Logo" className="w-10 h-10" />
+            <img src="/RepairRequest Logo Transparent_1750783382845.png" alt="RepairRequest Logo" className="w-10 h-10" />
             <span className="text-lg font-semibold text-gray-900">Repair Request</span>
           </div>
 
@@ -102,6 +117,9 @@ export default function SignupPage() {
             <Button
               variant="outline"
               className="flex-1 h-12 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 bg-transparent"
+              onClick={() => {
+                window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`;
+              }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -121,9 +139,9 @@ export default function SignupPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Google
+              Sign Up with Google
             </Button>
-            <Button
+            {/* <Button
               variant="outline"
               className="flex-1 h-12 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 bg-transparent"
             >
@@ -134,7 +152,7 @@ export default function SignupPage() {
                 <rect width="50" height="50" x="50" y="50" fill="#FFB900" />
               </svg>
               Microsoft
-            </Button>
+            </Button> */}
           </div>
 
           {/* Divider */}

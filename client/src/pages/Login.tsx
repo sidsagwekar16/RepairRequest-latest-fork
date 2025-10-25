@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import logoPath from "@assets/RepairRequest Logo Transparent_1750783382845.png";
 
 export default function Login() {
   const handleGoogleLogin = () => {
@@ -15,7 +14,7 @@ export default function Login() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <img src={logoPath} alt="RepairRequest Logo" className="w-10 h-10" />
+              <img src="/RepairRequest Logo Transparent_1750783382845.png" alt="RepairRequest Logo" className="w-10 h-10" />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">RepairRequest</h1>
                 <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
@@ -84,7 +83,7 @@ export default function Login() {
             <div className="flex justify-center space-x-6 text-sm text-gray-500">
               <Link to="/support" className="hover:text-blue-600 transition-colors">Support</Link>
               <Link to="/about" className="hover:text-blue-600 transition-colors">About</Link>
-              <Link to="/privacy" className="hover:text-blue-600 transition-colors">Privacy</Link>
+              <Link to="/privacy" className="hover:text-blue-600 transition-colors">Privacy Policy</Link>
             </div>
           </div>
         </div>
