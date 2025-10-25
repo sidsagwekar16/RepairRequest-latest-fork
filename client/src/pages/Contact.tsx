@@ -3,93 +3,36 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { MapPin, Mail, Phone, Clock, Menu } from "lucide-react";
+import { MapPin, Mail, Phone, Clock, Calendar } from "lucide-react";
 import { Link } from "react-router-dom";
-import React, { useState } from "react";
+import ScrollToTop from "@/components/ScrollToTop";
+
+const logoPath = "/RepairRequest Logo Transparent_1750783382845.png";
 
 export default function Contact() {
-  // Form state
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    organization: "",
-    inquiry: "",
-    message: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState("");
-  const [error, setError] = useState("");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  // Handle input changes
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
-    const { id, value } = e.target;
-    setForm((prev) => ({ ...prev, [id]: value }));
-  }
-
-  // Handle form submit
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSuccess("");
-    setError("");
-    // Basic validation
-    if (!form.firstName || !form.lastName || !form.email || !form.organization || !form.message) {
-      setError("Please fill in all required fields.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const API_URL = import.meta.env.VITE_API_URL || "";
-      const res = await fetch(`${API_URL}/api/contact`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-
-      console.log("Response: ", res)
-      if (res.ok) {
-        setSuccess("Your message has been sent! Someone will be in touch with you shortly.");
-        setForm({
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
-          organization: "",
-          inquiry: "",
-          message: "",
-        });
-      } else {
-        const data = await res.json();
-        setError(data.error || "Something went wrong. Please try again later.");
-      }
-    } catch (err) {
-      console.log("Error message: ", err)
-      setError("Network error. Please try again later.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <img src="/RepairRequest Logo Transparent_1750783382845.png" alt="RepairRequest Logo" className="w-10 h-10" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">RepairRequest</h1>
-                <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
+            <Link to="/">
+              <div className="flex items-center space-x-3 cursor-pointer">
+                <img src={logoPath} alt="RepairRequest Logo" className="w-10 h-10" />
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">RepairRequest</h1>
+                  <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
+                </div>
               </div>
-            </div>
-
+            </Link>
+            
             {/* Navigation Menu */}
             <nav className="hidden md:flex items-center space-x-6">
               <Link to="/" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Home
+              </Link>
+              <Link to="/features" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Features
               </Link>
               <Link to="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Pricing
@@ -97,51 +40,54 @@ export default function Contact() {
               <Link to="/faq" className="text-gray-600 hover:text-blue-600 transition-colors">
                 FAQ
               </Link>
-              <Link to="/support" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Support
+              <Link to="/login" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Login
               </Link>
-              <Link to="/login">
+              <a href="https://calendly.com/schoolhouselogistics/30min" target="_blank" rel="noopener noreferrer">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white ml-4">
-                  Login to Portal
+                  Schedule Call
                 </Button>
-              </Link>
+              </a>
             </nav>
-
+            
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="p-2 rounded-md text-blue-600 hover:bg-blue-100"
-                aria-label="Open menu"
-              >
-                <Menu size={28} />
-              </button>
+              <a href="https://calendly.com/schoolhouselogistics/30min" target="_blank" rel="noopener noreferrer">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  Schedule Call
+                </Button>
+              </a>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu Drawer */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex justify-end">
-          <div className="w-64 bg-white h-full shadow-lg p-6 flex flex-col space-y-4">
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="self-end text-gray-500 hover:text-blue-600 text-2xl"
-              aria-label="Close menu"
-            >
-              ×
-            </button>
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 hover:text-blue-600 text-lg">Home</Link>
-            <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 hover:text-blue-600 text-lg">Pricing</Link>
-            <Link to="/faq" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 hover:text-blue-600 text-lg">FAQ</Link>
-            <Link to="/support" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 hover:text-blue-600 text-lg">Support</Link>
-            <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">Login to Portal</Button>
-            </Link>
+      {/* Promotional Banner */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm sm:text-base font-medium text-left">
+                🎉 Try RepairRequest Free for 30 Days! 
+                <span className="hidden sm:inline ml-2">• No credit card required • Full access to all features • Cancel anytime</span>
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <a href="/api/login" className="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center">
+                Start Free Trial
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+              <button className="text-white hover:text-blue-100 transition-colors p-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Hero Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
@@ -160,11 +106,11 @@ export default function Contact() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-
+            
             {/* Contact Information */}
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-8">Contact Information</h2>
-
+              
               <div className="space-y-6">
                 <div className="flex items-start space-x-4">
                   <MapPin className="h-6 w-6 text-blue-600 mt-1" />
@@ -184,6 +130,7 @@ export default function Contact() {
                   <div>
                     <h3 className="font-semibold text-gray-900">Email</h3>
                     <p className="text-gray-600">info@schoolhouselogistics.com</p>
+                    <p className="text-gray-600">support@schoolhouselogistics.com</p>
                   </div>
                 </div>
 
@@ -191,8 +138,8 @@ export default function Contact() {
                   <Phone className="h-6 w-6 text-blue-600 mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Phone</h3>
-                    <p className="text-gray-600">Sales: 407-494-5230</p>
-                    <p className="text-gray-600">Support: 407-494-5230</p>
+                    <p className="text-gray-600">Sales: 1-800-REPAIR-1</p>
+                    <p className="text-gray-600">Support: 1-800-REPAIR-2</p>
                   </div>
                 </div>
 
@@ -210,9 +157,9 @@ export default function Contact() {
               <div className="mt-8 p-6 bg-blue-50 rounded-lg">
                 <h3 className="font-semibold text-gray-900 mb-2">Need Immediate Support?</h3>
                 <p className="text-gray-600 mb-4">
-                  If you're an existing customer with an urgent issue, please log into your portal.
+                  If you're an existing customer with an urgent issue, please log into your portal and use the live chat feature for fastest response.
                 </p>
-                <Link to="/signup">
+                <Link to="/login">
                   <Button className="bg-blue-600 hover:bg-blue-700">
                     Access Portal
                   </Button>
@@ -230,36 +177,34 @@ export default function Contact() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form className="space-y-4" onSubmit={handleSubmit}>
+                  <form className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="firstName">First Name *</Label>
-                        <Input id="firstName" placeholder="John" required value={form.firstName} onChange={handleChange} />
+                        <Input id="firstName" placeholder="John" required />
                       </div>
                       <div>
                         <Label htmlFor="lastName">Last Name *</Label>
-                        <Input id="lastName" placeholder="Doe" required value={form.lastName} onChange={handleChange} />
+                        <Input id="lastName" placeholder="Doe" required />
                       </div>
                     </div>
                     <div>
                       <Label htmlFor="email">Email *</Label>
-                      <Input id="email" type="email" placeholder="john@example.com" required value={form.email} onChange={handleChange} />
+                      <Input id="email" type="email" placeholder="john@example.com" required />
                     </div>
                     <div>
                       <Label htmlFor="phone">Phone</Label>
-                      <Input id="phone" type="tel" placeholder="(555) 123-4567" value={form.phone} onChange={handleChange} />
+                      <Input id="phone" type="tel" placeholder="(555) 123-4567" />
                     </div>
                     <div>
                       <Label htmlFor="organization">Organization *</Label>
-                      <Input id="organization" placeholder="Your organization name" required value={form.organization} onChange={handleChange} />
+                      <Input id="organization" placeholder="Your organization name" required />
                     </div>
                     <div>
                       <Label htmlFor="inquiry">Inquiry Type</Label>
-                      <select
+                      <select 
                         id="inquiry"
                         className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        value={form.inquiry}
-                        onChange={handleChange}
                       >
                         <option value="">Select an option</option>
                         <option value="sales">Sales Inquiry</option>
@@ -271,19 +216,15 @@ export default function Contact() {
                     </div>
                     <div>
                       <Label htmlFor="message">Message *</Label>
-                      <Textarea
-                        id="message"
+                      <Textarea 
+                        id="message" 
                         placeholder="Please describe how we can help you..."
                         rows={5}
                         required
-                        value={form.message}
-                        onChange={handleChange}
                       />
                     </div>
-                    {error && <p className="text-red-600 text-sm text-center">{error}</p>}
-                    {success && <p className="text-green-600 text-sm text-center">{success}</p>}
-                    <Button className="w-full bg-blue-600 hover:bg-blue-700" type="submit" disabled={loading}>
-                      {loading ? "Sending..." : "Send Message"}
+                    <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                      Send Message
                     </Button>
                     <p className="text-sm text-gray-500 text-center">
                       * Required fields
@@ -348,11 +289,71 @@ export default function Contact() {
             </div>
 
             <div className="text-center mt-8">
-              <Link to="/">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                  Schedule Demo
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
+                Schedule Demo
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact and Calendly Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            
+            {/* Schedule a Meeting - Calendly Widget */}
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="flex items-center mb-6">
+                <Calendar className="h-8 w-8 text-blue-600 mr-3" />
+                <h2 className="text-2xl font-bold text-gray-900">Schedule a Meeting</h2>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Book a call with our team to discuss your organization's needs and explore our solutions.
+              </p>
+              
+              {/* Calendly Embed */}
+              <div className="calendly-inline-widget" data-url="https://calendly.com/schoolhouselogistics/30min" style={{minWidth: '320px', height: '630px'}}></div>
+              <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
+            </div>
+
+            {/* Get In Touch - Contact Form */}
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="flex items-center mb-6">
+                <Mail className="h-8 w-8 text-blue-600 mr-3" />
+                <h2 className="text-2xl font-bold text-gray-900">Get In Touch</h2>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Ready to transform your operations? Send us a message and we'll get back to you promptly.
+              </p>
+              
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Input placeholder="First Name *" required />
+                  </div>
+                  <div>
+                    <Input placeholder="Last Name *" required />
+                  </div>
+                </div>
+                <div>
+                  <Input type="email" placeholder="Email Address *" required />
+                </div>
+                <div>
+                  <Input placeholder="Organization/Company" />
+                </div>
+                <div>
+                  <Textarea 
+                    placeholder="Message *" 
+                    rows={4}
+                    required
+                  />
+                </div>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Message
                 </Button>
-              </Link>
+              </form>
             </div>
           </div>
         </div>
@@ -363,9 +364,9 @@ export default function Contact() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <Link to="/landing">
+              <Link to="/">
                 <div className="flex items-center space-x-3 mb-4 cursor-pointer">
-                  <img src="/RepairRequest Logo Transparent_1750783382845.png" alt="RepairRequest Logo" className="w-8 h-8" />
+                  <img src={logoPath} alt="RepairRequest Logo" className="w-8 h-8" />
                   <div>
                     <h3 className="text-lg font-bold">RepairRequest</h3>
                     <p className="text-sm text-gray-400">by SchoolHouse Logistics</p>
@@ -376,7 +377,7 @@ export default function Contact() {
                 Streamlining maintenance management for property managers and organizations across all industries.
               </p>
             </div>
-
+            
             <div>
               <h4 className="text-lg font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
@@ -385,23 +386,25 @@ export default function Contact() {
                 <li><Link to="/support" className="hover:text-white transition-colors">Support</Link></li>
               </ul>
             </div>
-
+            
             <div>
               <h4 className="text-lg font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
                 <li><Link to="/terms" className="hover:text-white transition-colors">Terms</Link></li>
               </ul>
             </div>
           </div>
-
+          
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
             <p>&copy; 2024 RepairRequest by SchoolHouse Logistics. All rights reserved.</p>
           </div>
         </div>
       </footer>
+      
+      <ScrollToTop />
     </div>
   );
 }

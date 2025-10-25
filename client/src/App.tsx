@@ -24,6 +24,7 @@ import Contact from "@/pages/Contact";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import FAQ from "@/pages/FAQ";
+import Features from "@/pages/Features";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileNav from "@/components/layout/MobileNav";
@@ -102,6 +103,7 @@ function AppContent() {
       <Routes>
         {/* Public routes - always available */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="/features" element={<Features />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/support" element={<Support />} />

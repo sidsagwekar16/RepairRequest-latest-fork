@@ -1,29 +1,37 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Target, Heart, Award, Menu } from "lucide-react";
+import { Users, Target, Heart, Award, Calendar, Mail } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import ScrollToTop from "@/components/ScrollToTop";
+
+const logoPath = "/RepairRequest Logo Transparent_1750783382845.png";
 
 export default function About() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <img src="/RepairRequest Logo Transparent_1750783382845.png" alt="RepairRequest Logo" className="w-10 h-10" />
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">RepairRequest</h1>
-                <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
+            <Link to="/">
+              <div className="flex items-center space-x-3 cursor-pointer">
+                <img src={logoPath} alt="RepairRequest Logo" className="w-10 h-10" />
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">RepairRequest</h1>
+                  <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
+                </div>
               </div>
-            </div>
+            </Link>
             
             {/* Navigation Menu */}
             <nav className="hidden md:flex items-center space-x-6">
               <Link to="/" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Home
+              </Link>
+              <Link to="/features" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Features
               </Link>
               <Link to="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Pricing
@@ -31,51 +39,54 @@ export default function About() {
               <Link to="/faq" className="text-gray-600 hover:text-blue-600 transition-colors">
                 FAQ
               </Link>
-              <Link to="/support" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Support
+              <Link to="/login" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Login
               </Link>
-              <Link to="/login">
+              <a href="https://calendly.com/schoolhouselogistics/30min" target="_blank" rel="noopener noreferrer">
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white ml-4">
-                  Login to Portal
+                  Schedule Call
                 </Button>
-              </Link>
+              </a>
             </nav>
             
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <button
-                onClick={() => setMobileMenuOpen(true)}
-                className="p-2 rounded-md text-blue-600 hover:bg-blue-100"
-                aria-label="Open menu"
-              >
-                <Menu size={28} />
-              </button>
+              <a href="https://calendly.com/schoolhouselogistics/30min" target="_blank" rel="noopener noreferrer">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  Schedule Call
+                </Button>
+              </a>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu Drawer */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-40 flex justify-end">
-          <div className="w-64 bg-white h-full shadow-lg p-6 flex flex-col space-y-4">
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="self-end text-gray-500 hover:text-blue-600 text-2xl"
-              aria-label="Close menu"
-            >
-              ×
-            </button>
-            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 hover:text-blue-600 text-lg">Home</Link>
-            <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 hover:text-blue-600 text-lg">Pricing</Link>
-            <Link to="/faq" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 hover:text-blue-600 text-lg">FAQ</Link>
-            <Link to="/support" onClick={() => setMobileMenuOpen(false)} className="text-gray-700 hover:text-blue-600 text-lg">Support</Link>
-            <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">Login to Portal</Button>
-            </Link>
+      {/* Promotional Banner */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <p className="text-sm sm:text-base font-medium text-left">
+                🎉 Try RepairRequest Free for 30 Days! 
+                <span className="hidden sm:inline ml-2">• No credit card required • Full access to all features • Cancel anytime</span>
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <a href="/api/login" className="bg-white text-blue-600 px-4 py-2 rounded-lg font-medium hover:bg-blue-50 transition-colors flex items-center">
+                Start Free Trial
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+              <button className="text-white hover:text-blue-100 transition-colors p-1">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Hero Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8">
@@ -245,16 +256,78 @@ export default function About() {
             Join hundreds of organizations already using RepairRequest to streamline their facility management.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/signup">
+            <Link to="/">
               <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-50">
                 Get Started Today
               </Button>
             </Link>
             <Link to="/contact">
-              <Button size="lg" variant="outline" className="border-white text-blue-600 hover:bg-white hover:text-blue-600">
+              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
                 Contact Us
               </Button>
             </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact and Calendly Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            
+            {/* Schedule a Meeting - Calendly Widget */}
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="flex items-center mb-6">
+                <Calendar className="h-8 w-8 text-blue-600 mr-3" />
+                <h2 className="text-2xl font-bold text-gray-900">Schedule a Meeting</h2>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Book a call with our team to discuss your organization's needs and explore our solutions.
+              </p>
+              
+              {/* Calendly Embed */}
+              <div className="calendly-inline-widget" data-url="https://calendly.com/schoolhouselogistics/30min" style={{minWidth: '320px', height: '630px'}}></div>
+              <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
+            </div>
+
+            {/* Get In Touch - Contact Form */}
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <div className="flex items-center mb-6">
+                <Mail className="h-8 w-8 text-blue-600 mr-3" />
+                <h2 className="text-2xl font-bold text-gray-900">Get In Touch</h2>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Ready to transform your operations? Send us a message and we'll get back to you promptly.
+              </p>
+              
+              <form className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Input placeholder="First Name *" required />
+                  </div>
+                  <div>
+                    <Input placeholder="Last Name *" required />
+                  </div>
+                </div>
+                <div>
+                  <Input type="email" placeholder="Email Address *" required />
+                </div>
+                <div>
+                  <Input placeholder="Organization/Company" />
+                </div>
+                <div>
+                  <Textarea 
+                    placeholder="Message *" 
+                    rows={4}
+                    required
+                  />
+                </div>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Message
+                </Button>
+              </form>
+            </div>
           </div>
         </div>
       </section>
@@ -266,7 +339,7 @@ export default function About() {
             <div>
               <Link to="/">
                 <div className="flex items-center space-x-3 mb-4 cursor-pointer">
-                  <img src="/RepairRequest Logo Transparent_1750783382845.png" alt="RepairRequest Logo" className="w-8 h-8" />
+                  <img src={logoPath} alt="RepairRequest Logo" className="w-8 h-8" />
                   <div>
                     <h3 className="text-lg font-bold">RepairRequest</h3>
                     <p className="text-sm text-gray-400">by SchoolHouse Logistics</p>
@@ -281,7 +354,7 @@ export default function About() {
             <div>
               <h4 className="text-lg font-semibold mb-4">Platform</h4>
               <ul className="space-y-2 text-gray-400">
-                <li><Link to="/login" className="hover:text-white transition-colors">Portal Login</Link></li>
+                <li><Link to="/" className="hover:text-white transition-colors">Portal Login</Link></li>
                 <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link to="/support" className="hover:text-white transition-colors">Support</Link></li>
               </ul>
@@ -292,7 +365,7 @@ export default function About() {
               <ul className="space-y-2 text-gray-400">
                 <li><Link to="/about" className="hover:text-white transition-colors">About</Link></li>
                 <li><Link to="/contact" className="hover:text-white transition-colors">Contact</Link></li>
-                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
                 <li><Link to="/terms" className="hover:text-white transition-colors">Terms</Link></li>
               </ul>
             </div>
@@ -303,6 +376,8 @@ export default function About() {
           </div>
         </div>
       </footer>
+      
+      <ScrollToTop />
     </div>
   );
 }
