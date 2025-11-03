@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import logoPath from "@assets/RepairRequest Logo Transparent_1750783382845.png";
 import ScrollToTop from "@/components/ScrollToTop";
 import { Helmet } from "react-helmet-async";
+import PublicHeader from "@/components/layout/PublicHeader";
 
 export default function Pricing() {
   return (
@@ -18,55 +19,8 @@ export default function Pricing() {
         <meta property="og:title" content="RepairRequest Pricing - Affordable Facilities Management" />
         <meta property="og:description" content="Transparent pricing for comprehensive facility management software. Plans starting at $99/month serving schools, commercial real estate, residential communities & property managers." />
       </Helmet>
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <Link to="/">
-              <div className="flex items-center space-x-3 cursor-pointer">
-                <img src={logoPath} alt="RepairRequest Logo" className="w-10 h-10" />
-                <div>
-                  <h1 className="text-xl font-bold text-gray-900">RepairRequest</h1>
-                  <p className="text-sm text-gray-600">by SchoolHouse Logistics</p>
-                </div>
-              </div>
-            </Link>
-            
-            {/* Navigation Menu */}
-            <nav className="hidden md:flex items-center space-x-6">
-              <Link to="/" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Home
-              </Link>
-              <Link to="/features" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Features
-              </Link>
-              <Link to="/pricing" className="text-blue-600 font-medium">
-                Pricing
-              </Link>
-              <Link to="/faq" className="text-gray-600 hover:text-blue-600 transition-colors">
-                FAQ
-              </Link>
-              <Link to="/login" className="text-gray-600 hover:text-blue-600 transition-colors">
-                Login
-              </Link>
-              <a href="https://calendly.com/schoolhouselogistics/30min" target="_blank" rel="noopener noreferrer">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white ml-4">
-                  Schedule Call
-                </Button>
-              </a>
-            </nav>
-            
-            {/* Mobile Menu Button */}
-            <div className="md:hidden">
-              <a href="https://calendly.com/schoolhouselogistics/30min" target="_blank" rel="noopener noreferrer">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Schedule Call
-                </Button>
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+      
+      <PublicHeader currentPage="pricing" />
 
       {/* Promotional Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2">

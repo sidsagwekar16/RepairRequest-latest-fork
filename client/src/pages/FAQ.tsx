@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import logoPath from "@assets/RepairRequest Logo Transparent_1750783382845.png";
 import ScrollToTop from "@/components/ScrollToTop";
 import { Helmet } from "react-helmet-async";
+import PublicHeader from "@/components/layout/PublicHeader";
 
 export default function FAQ() {
   return (
@@ -19,27 +20,7 @@ export default function FAQ() {
         <meta property="og:description" content="Find answers to common questions about our facilities management platform, from setup to advanced features." />
       </Helmet>
 
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-4">
-              <Link to="/">
-                <img src={logoPath} alt="RepairRequest" className="h-8 w-auto" />
-              </Link>
-            </div>
-            <nav className="hidden md:flex space-x-8">
-              <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium">Home</Link>
-              <Link to="/features" className="text-gray-700 hover:text-blue-600 font-medium">Features</Link>
-              <Link to="/pricing" className="text-gray-700 hover:text-blue-600 font-medium">Pricing</Link>
-              <Link to="/faq" className="text-blue-600 font-medium">FAQ</Link>
-              <a href="https://calendly.com/schoolhouselogistics/30min" target="_blank" rel="noopener noreferrer" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                Schedule Call
-              </a>
-            </nav>
-          </div>
-        </div>
-      </header>
+      <PublicHeader currentPage="faq" />
 
       {/* Promotional Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2">

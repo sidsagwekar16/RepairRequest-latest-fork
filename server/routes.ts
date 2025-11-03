@@ -2702,14 +2702,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("✅ User created:", user);
 
-      return res.status(201).json({
-        message: "Signup successful",
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-        },
+      // Set session for user after signup
+      req.session.user = {
+        id: user.id,
+        email: user.email || '',
+        role: user.role,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        organizationId: user.organizationId ?? undefined
+      };
+
+      // Save session before sending response
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("🔥 Session save error:", err);
+          return res.status(500).json({ message: "Failed to save session" });
+        }
+
+        console.log("✅ Session saved with user:", req.session.user);
+
+        return res.status(201).json({
+          message: "Signup successful",
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          },
+        });
       });
     } catch (err: any) {
       console.error("🔥 Signup error:", err);
@@ -2754,9 +2775,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         organizationId: user.organizationId ?? undefined
       };
 
-      return res.status(200).json({
-        message: "Login successful",
-        user: req.session.user,
+      // Save session before sending response
+      req.session.save((err: any) => {
+        if (err) {
+          console.error("🔥 Session save error:", err);
+          return res.status(500).json({ message: "Failed to save session" });
+        }
+
+        console.log("✅ Session saved with user:", req.session.user);
+
+        return res.status(200).json({
+          message: "Login successful",
+          user: req.session.user,
+        });
       });
     } catch (err: any) {
       console.error("🔥 Login error:", err);
